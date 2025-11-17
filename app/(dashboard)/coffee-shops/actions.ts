@@ -8,6 +8,34 @@ import { getPlaceDetails, parseAddress, parseOpeningHours, getPhotoUrl, findPlac
 import { generateCoffeeShopDescription } from "@/lib/openai/generate-description"
 
 /**
+ * Normaliza el formato del teléfono a +56912345678 (sin espacios ni caracteres especiales)
+ */
+function normalizePhoneNumber(phone: string | null | undefined): string | null {
+  if (!phone) return null
+
+  // Remover todos los caracteres que no sean números o el símbolo +
+  let normalized = phone.replace(/[^\d+]/g, '')
+
+  // Si no empieza con +, agregarlo
+  if (!normalized.startsWith('+')) {
+    // Si empieza con 56, agregar el +
+    if (normalized.startsWith('56')) {
+      normalized = '+' + normalized
+    }
+    // Si empieza con 9 (número de celular chileno), agregar +56
+    else if (normalized.startsWith('9') && normalized.length >= 9) {
+      normalized = '+56' + normalized
+    }
+    // Si tiene otro formato, dejarlo como está pero con +
+    else {
+      normalized = '+' + normalized
+    }
+  }
+
+  return normalized
+}
+
+/**
  * Activa o desactiva una cafetería
  */
 export async function toggleCoffeeShopStatus(shopId: string, newStatus: boolean) {
@@ -146,7 +174,7 @@ export async function importFromGoogleMaps(googleMapsUrl: string) {
     const importedData = {
       name: placeDetails.name,
       description: description,
-      phone: placeDetails.formatted_phone_number || null,
+      phone: normalizePhoneNumber(placeDetails.formatted_phone_number),
       website: placeDetails.website || null,
       googleMapsUrl: placeDetails.url || googleMapsUrl,
       address: {

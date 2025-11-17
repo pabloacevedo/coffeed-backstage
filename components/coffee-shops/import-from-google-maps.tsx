@@ -43,12 +43,22 @@ interface ImportedData {
 
 interface ImportFromGoogleMapsProps {
   onImportSuccess: (data: ImportedData) => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function ImportFromGoogleMaps({ onImportSuccess }: ImportFromGoogleMapsProps) {
-  const [open, setOpen] = useState(false)
+export function ImportFromGoogleMaps({
+  onImportSuccess,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange
+}: ImportFromGoogleMapsProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
   const [googleMapsUrl, setGoogleMapsUrl] = useState("")
   const [loading, setLoading] = useState(false)
+
+  // Use controlled state if provided, otherwise use internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen
+  const setOpen = controlledOnOpenChange || setInternalOpen
 
   const handleImport = async () => {
     if (!googleMapsUrl.trim()) {
@@ -81,15 +91,20 @@ export function ImportFromGoogleMaps({ onImportSuccess }: ImportFromGoogleMapsPr
     }
   }
 
+  // Only show DialogTrigger if not controlled (for backwards compatibility)
+  const showTrigger = controlledOpen === undefined
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <MapPin className="h-4 w-4" />
-          Importar desde Google Maps
-          <Sparkles className="h-3 w-3 text-purple-500" />
-        </Button>
-      </DialogTrigger>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" className="gap-2">
+            <MapPin className="h-4 w-4" />
+            Importar desde Google Maps
+            <Sparkles className="h-3 w-3 text-purple-500" />
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

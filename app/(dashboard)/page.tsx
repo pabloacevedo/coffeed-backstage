@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { Coffee, Users, Star, Flag, TrendingUp, Eye, ArrowRight, ExternalLink, Sparkles } from "lucide-react"
+import { Coffee, Users, Star, Flag, TrendingUp, Eye, ArrowRight, ExternalLink, Sparkles, MapPin, Plus } from "lucide-react"
 import Link from "next/link"
 import { CoffeedLogo } from "@/components/coffeed-logo"
+import { ImportFromGoogleMapsButton } from "@/components/coffee-shops/import-from-google-maps-button"
 
 async function getStats() {
   const supabase = await createServerSupabaseClient()
@@ -138,6 +139,44 @@ async function DashboardContent() {
 
   return (
     <>
+      {/* Quick Actions */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200 hover:shadow-md transition-all">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-purple-600" />
+              Importar desde Google Maps
+            </CardTitle>
+            <CardDescription>
+              Agrega cafeterías fácilmente copiando la URL de Google Maps
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ImportFromGoogleMapsButton />
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 border-orange-200 hover:shadow-md transition-all">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-orange-600" />
+              Crear Cafetería Manual
+            </CardTitle>
+            <CardDescription>
+              Agrega una nueva cafetería manualmente con todos los detalles
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link href="/coffee-shops/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Nueva Cafetería
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {statCards.map((stat) => (
