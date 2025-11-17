@@ -22,9 +22,7 @@ interface FormData {
   googleMapsUrl: string
   street: string
   city: string
-  state: string
   country: string
-  postalCode: string
   latitude: string
   longitude: string
   imageUrl: string
@@ -56,9 +54,7 @@ export default function NewCoffeeShopPage() {
     googleMapsUrl: '',
     street: '',
     city: '',
-    state: '',
     country: '',
-    postalCode: '',
     latitude: '',
     longitude: '',
     imageUrl: '',
@@ -74,9 +70,7 @@ export default function NewCoffeeShopPage() {
       googleMapsUrl: importedData.googleMapsUrl || '',
       street: importedData.address?.street || '',
       city: importedData.address?.city || '',
-      state: importedData.address?.state || '',
       country: importedData.address?.country || '',
-      postalCode: importedData.address?.postalCode || '',
       latitude: importedData.address?.latitude?.toString() || '',
       longitude: importedData.address?.longitude?.toString() || '',
       imageUrl: importedData.imageUrl || '',
@@ -121,9 +115,7 @@ export default function NewCoffeeShopPage() {
           coffee_shop_id: coffeeShop.id,
           street: formData.street,
           city: formData.city,
-          state: formData.state,
           country: formData.country,
-          postal_code: formData.postalCode || null,
         })
 
       if (addressError) throw addressError
@@ -260,7 +252,7 @@ export default function NewCoffeeShopPage() {
                 required
               />
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="city">Ciudad *</Label>
                 <Input
@@ -269,15 +261,6 @@ export default function NewCoffeeShopPage() {
                   onChange={(e) => updateField('city', e.target.value)}
                   placeholder="Ej: Santiago"
                   required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">Estado/Región</Label>
-                <Input
-                  id="state"
-                  value={formData.state}
-                  onChange={(e) => updateField('state', e.target.value)}
-                  placeholder="Ej: Región Metropolitana"
                 />
               </div>
               <div className="space-y-2">
@@ -290,16 +273,7 @@ export default function NewCoffeeShopPage() {
                 />
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="postalCode">Código Postal</Label>
-                <Input
-                  id="postalCode"
-                  value={formData.postalCode}
-                  onChange={(e) => updateField('postalCode', e.target.value)}
-                  placeholder="Ej: 12345"
-                />
-              </div>
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="latitude">Latitud</Label>
                 <Input
