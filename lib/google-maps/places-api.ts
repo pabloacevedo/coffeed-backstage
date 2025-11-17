@@ -186,9 +186,14 @@ export function getPhotoUrl(photoReference: string, maxWidth: number = 1200): st
 export function parseAddress(formattedAddress: string) {
   const parts = formattedAddress.split(',').map(p => p.trim())
 
+  // Limpiar la ciudad removiendo códigos postales (números al inicio)
+  let city = parts[1] || ''
+  // Remover números y espacios al inicio (ej: "8000600 Puerto Montt" -> "Puerto Montt")
+  city = city.replace(/^\d+\s+/, '')
+
   return {
     street: parts[0] || '',
-    city: parts[1] || '',
+    city: city,
     state: parts[2] || '',
     country: parts[parts.length - 1] || '',
     postalCode: '',
@@ -197,6 +202,8 @@ export function parseAddress(formattedAddress: string) {
 
 /**
  * Convierte los horarios de Google Places al formato de nuestra base de datos
+ * Google usa: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
+ * Nosotros usamos: 0=Lunes, 1=Martes, 2=Miércoles, 3=Jueves, 4=Viernes, 5=Sábado, 6=Domingo
  */
 export function parseOpeningHours(openingHours?: PlaceDetails['opening_hours']) {
   if (!openingHours?.periods) {
@@ -205,19 +212,29 @@ export function parseOpeningHours(openingHours?: PlaceDetails['opening_hours']) 
 
   const schedule = []
 
-  for (let day = 0; day < 7; day++) {
-    const period = openingHours.periods.find(p => p.open.day === day)
+  // Convertir índices de Google (0=Dom) a nuestros índices (0=Lun)
+  const convertGoogleDayToOurDay = (googleDay: number) => {
+    // Google: 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+    // Nuestro: 0=Lun, 1=Mar, 2=Mié, 3=Jue, 4=Vie, 5=Sáb, 6=Dom
+    return googleDay === 0 ? 6 : googleDay - 1
+  }
+
+  // Recorrer nuestros días (0=Lunes hasta 6=Domingo)
+  for (let ourDay = 0; ourDay < 7; ourDay++) {
+    // Convertir a día de Google para buscar
+    const googleDay = ourDay === 6 ? 0 : ourDay + 1
+    const period = openingHours.periods.find(p => p.open.day === googleDay)
 
     if (period) {
       schedule.push({
-        dayOfWeek: day,
+        dayOfWeek: ourDay,
         openTime: formatTime(period.open.time),
         closeTime: period.close ? formatTime(period.close.time) : '23:59',
         isClosed: false,
       })
     } else {
       schedule.push({
-        dayOfWeek: day,
+        dayOfWeek: ourDay,
         openTime: '09:00',
         closeTime: '18:00',
         isClosed: true,

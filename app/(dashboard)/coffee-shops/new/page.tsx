@@ -34,13 +34,13 @@ interface FormData {
   }>
 }
 
-const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 const defaultSchedule = Array.from({ length: 7 }, (_, i) => ({
   dayOfWeek: i,
   openTime: '09:00',
   closeTime: '18:00',
-  isClosed: i === 0, // Domingo cerrado por defecto
+  isClosed: i === 6, // Domingo (índice 6) cerrado por defecto
 }))
 
 export default function NewCoffeeShopPage() {

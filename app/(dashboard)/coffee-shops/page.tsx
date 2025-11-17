@@ -9,24 +9,47 @@ import { Skeleton } from "@/components/ui/skeleton"
 async function getCoffeeShops() {
   const supabase = await createServerSupabaseClient()
 
-  const { data: coffeeShops, error } = await supabase
-    .from("coffee_shops")
-    .select(`
-      *,
-      addresses(*),
-      schedules(*),
-      contacts(*),
-      reviews(rating)
-    `)
-    .eq("deleted", false)
-    .order("created_at", { ascending: false })
+  // Supabase tiene un límite de 1000 registros por consulta
+  // Para obtener más, necesitamos hacer múltiples consultas usando paginación
+  let allShops: any[] = []
+  let hasMore = true
+  let offset = 0
+  const pageSize = 1000
 
-  if (error) {
-    return []
+  while (hasMore) {
+    const { data: coffeeShops, error } = await supabase
+      .from("coffee_shops")
+      .select(`
+        *,
+        addresses(*),
+        schedules(*),
+        contacts(*),
+        reviews(rating)
+      `)
+      .eq("deleted", false)
+      .order("name", { ascending: true }) // Ordenar alfabéticamente para mejor experiencia
+      .range(offset, offset + pageSize - 1)
+
+    if (error) {
+      console.error('Error fetching coffee shops:', error)
+      break
+    }
+
+    if (coffeeShops && coffeeShops.length > 0) {
+      allShops = [...allShops, ...coffeeShops]
+      offset += pageSize
+
+      // Si recibimos menos registros que el tamaño de página, no hay más
+      if (coffeeShops.length < pageSize) {
+        hasMore = false
+      }
+    } else {
+      hasMore = false
+    }
   }
 
   // Calculate average rating for each shop
-  return (coffeeShops as any[]).map((shop) => {
+  return allShops.map((shop) => {
     const ratings = shop.reviews?.map((r: any) => r.rating) || []
     const avgRating = ratings.length > 0
       ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length

@@ -10,6 +10,7 @@ import { ToggleActiveButton } from "@/components/coffee-shops/toggle-active-butt
 import { ScheduleManager } from "@/components/coffee-shops/schedule-manager"
 import { ContactsManager } from "@/components/coffee-shops/contacts-manager"
 import { ImageViewer } from "@/components/coffee-shops/image-viewer"
+import { DeleteButton } from "@/components/coffee-shops/delete-button"
 
 async function getCoffeeShop(id: string) {
   const supabase = await createServerSupabaseClient()
@@ -39,7 +40,7 @@ async function getCoffeeShop(id: string) {
   return shop as any
 }
 
-const daysOfWeek = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
+const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
 export default async function CoffeeShopDetailPage({
   params,
@@ -79,6 +80,7 @@ export default async function CoffeeShopDetailPage({
               Editar
             </Link>
           </Button>
+          <DeleteButton shopId={shop.id} shopName={shop.name} />
         </div>
       </div>
 
@@ -184,14 +186,42 @@ export default async function CoffeeShopDetailPage({
             <CardContent>
               {shop.contacts && shop.contacts.length > 0 ? (
                 <div className="space-y-3">
-                  {shop.contacts.map((contact: any) => (
-                    <div key={contact.id} className="flex items-center gap-3">
-                      {contact.type === "phone" && <Phone className="h-4 w-4 text-muted-foreground" />}
-                      {contact.type === "instagram" && <Instagram className="h-4 w-4 text-muted-foreground" />}
-                      {contact.type === "web" && <Globe className="h-4 w-4 text-muted-foreground" />}
-                      <span className="text-sm">{contact.value}</span>
-                    </div>
-                  ))}
+                  {shop.contacts.map((contact: any) => {
+                    let href = "#"
+                    let target = "_self"
+
+                    if (contact.type === "phone") {
+                      href = `tel:${contact.value}`
+                    } else if (contact.type === "instagram") {
+                      // Si el valor ya es una URL completa, úsala; si no, construye la URL
+                      href = contact.value.startsWith("http")
+                        ? contact.value
+                        : `https://instagram.com/${contact.value.replace("@", "")}`
+                      target = "_blank"
+                    } else if (contact.type === "web") {
+                      // Asegurar que tiene protocolo
+                      href = contact.value.startsWith("http")
+                        ? contact.value
+                        : `https://${contact.value}`
+                      target = "_blank"
+                    }
+
+                    return (
+                      <div key={contact.id} className="flex items-center gap-3">
+                        {contact.type === "phone" && <Phone className="h-4 w-4 text-muted-foreground" />}
+                        {contact.type === "instagram" && <Instagram className="h-4 w-4 text-muted-foreground" />}
+                        {contact.type === "web" && <Globe className="h-4 w-4 text-muted-foreground" />}
+                        <a
+                          href={href}
+                          target={target}
+                          rel={target === "_blank" ? "noopener noreferrer" : undefined}
+                          className="text-sm text-primary hover:underline"
+                        >
+                          {contact.value}
+                        </a>
+                      </div>
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">

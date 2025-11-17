@@ -54,9 +54,28 @@ export function CoffeeShopsTable({ data }: { data: CoffeeShop[] }) {
   const router = useRouter()
   const supabase = createClient()
 
-  const filteredData = data.filter((shop) =>
-    shop.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Función para normalizar texto (remover tildes y caracteres especiales)
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remover tildes
+  }
+
+  const filteredData = data.filter((shop) => {
+    const query = normalizeText(searchQuery)
+    const name = normalizeText(shop.name)
+    const description = normalizeText(shop.description || '')
+    const city = normalizeText(shop.addresses?.[0]?.city || '')
+    const country = normalizeText(shop.addresses?.[0]?.country || '')
+
+    return (
+      name.includes(query) ||
+      description.includes(query) ||
+      city.includes(query) ||
+      country.includes(query)
+    )
+  })
 
   const handleDelete = async (id: string) => {
     setLoading(true)

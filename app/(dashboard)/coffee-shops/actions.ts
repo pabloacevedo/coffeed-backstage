@@ -5,7 +5,6 @@ import { createAdminSupabaseClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/auth/admin"
 import { extractPlaceIdFromUrl, expandShortUrl } from "@/lib/google-maps/extract-place-id"
 import { getPlaceDetails, parseAddress, parseOpeningHours, getPhotoUrl, findPlaceByCoordinatesAndName } from "@/lib/google-maps/places-api"
-import { generateCoffeeShopDescription } from "@/lib/openai/generate-description"
 
 /**
  * Normaliza el formato del teléfono a +56912345678 (sin espacios ni caracteres especiales)
@@ -152,13 +151,8 @@ export async function importFromGoogleMaps(googleMapsUrl: string) {
     // Paso 3: Parsear la dirección
     const address = parseAddress(placeDetails.formatted_address)
 
-    // Paso 4: Generar descripción con OpenAI
-    const description = await generateCoffeeShopDescription({
-      name: placeDetails.name,
-      address: placeDetails.formatted_address,
-      rating: placeDetails.rating,
-      reviews: placeDetails.reviews,
-    })
+    // Paso 4: Usar descripción vacía (se puede editar manualmente después)
+    const description = null
 
     // Paso 5: Obtener URL de la primera foto
     let imageUrl = null

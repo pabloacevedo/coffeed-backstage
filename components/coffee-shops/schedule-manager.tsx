@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { Clock, Plus, Save } from "lucide-react"
 
-const daysOfWeek = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
+const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
 interface Schedule {
   id?: string

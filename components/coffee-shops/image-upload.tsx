@@ -67,46 +67,18 @@ export function ImageUpload({ coffeeShopId, coffeeShopName, currentImage }: Imag
 
     setLoading(true)
     try {
-      // Create unique filename
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${coffeeShopId}-${Date.now()}.${fileExt}`
-      const filePath = `coffee-shops/${fileName}`
+      // Crear FormData para enviar al server action
+      const formData = new FormData()
+      formData.append('file', file)
 
-      // Upload to Supabase Storage
-      const { error: uploadError, data } = await supabase.storage
-        .from('images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      // Importar el server action dinámicamente
+      const { uploadCoffeeShopImage } = await import('@/app/(dashboard)/coffee-shops/[id]/actions')
 
-      if (uploadError) {
-        throw uploadError
-      }
+      // Llamar al server action
+      const result = await uploadCoffeeShopImage(coffeeShopId, formData)
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('images')
-        .getPublicUrl(filePath)
-
-      // Update coffee shop record
-      const { error: updateError } = await supabase
-        .from('coffee_shops')
-        .update({ image: publicUrl })
-        .eq('id', coffeeShopId)
-
-      if (updateError) throw updateError
-
-      // Delete old image if exists
-      if (currentImage && currentImage.includes('supabase')) {
-        try {
-          const oldPath = currentImage.split('/').slice(-2).join('/')
-          await supabase.storage
-            .from('images')
-            .remove([oldPath])
-        } catch {
-          // Silently fail - old image deletion is not critical
-        }
+      if (!result.success) {
+        throw new Error(result.error)
       }
 
       toast.success("Imagen actualizada correctamente")
@@ -115,6 +87,7 @@ export function ImageUpload({ coffeeShopId, coffeeShopName, currentImage }: Imag
       setPreview(null)
       router.refresh()
     } catch (error: any) {
+      console.error('Upload error:', error)
       toast.error(error.message || "Error al subir la imagen")
     } finally {
       setLoading(false)
