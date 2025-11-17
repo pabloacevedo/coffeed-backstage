@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
+import { requireAdmin } from "@/lib/auth/admin"
 
 export async function updateUser(
   userId: string,
@@ -10,10 +11,16 @@ export async function updateUser(
     isAdmin: boolean
   }
 ) {
-  console.log("[Server Action] Updating user:", userId, data)
+  // ✅ VALIDACIÓN CRÍTICA: Verificar que el usuario sea admin ANTES de cualquier operación
+  const adminUser = await requireAdmin()
   const supabase = createAdminSupabaseClient()
 
   try {
+    // Validación adicional: No permitir que un admin se quite sus propios permisos
+    if (userId === adminUser.id && !data.isAdmin) {
+      throw new Error("No puedes quitarte tus propios permisos de administrador")
+    }
+
     // Update profile (full_name)
     if (data.full_name !== undefined) {
       const { error: profileError } = await supabase
@@ -22,7 +29,6 @@ export async function updateUser(
         .eq("id", userId)
 
       if (profileError) {
-        console.error("[Server Action] Error updating profile:", profileError)
         throw new Error("Error al actualizar el perfil")
       }
     }
@@ -38,16 +44,13 @@ export async function updateUser(
     )
 
     if (metadataError) {
-      console.error("[Server Action] Error updating user metadata:", metadataError)
       throw new Error("Error al actualizar los permisos del usuario")
     }
 
-    console.log("[Server Action] User updated successfully")
     revalidatePath("/users", "page")
 
     return { success: true }
   } catch (error: any) {
-    console.error("[Server Action] Error updating user:", error)
     throw error
   }
 }

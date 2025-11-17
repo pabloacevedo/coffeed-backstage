@@ -13,14 +13,9 @@ async function getUsers() {
     .select("*")
     .order("created_at", { ascending: false })
 
-  if (error) {
-    console.error("[getUsers] Error fetching profiles:", error)
+  if (error || !profiles) {
     return []
   }
-
-  if (!profiles) return []
-
-  console.log("[getUsers] Fetched profiles count:", profiles.length)
 
   // Get stats, email, and admin status for each user
   const usersWithStats = await Promise.all(

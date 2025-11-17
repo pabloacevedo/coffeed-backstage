@@ -29,16 +29,8 @@ async function getReports(coffeeShopId?: string) {
   const { data: reports, error } = await query
 
   if (error) {
-    console.error("[getReports] Error fetching reports:", error)
     return []
   }
-
-  console.log("[getReports] Fetched reports count:", reports?.length || 0)
-  console.log("[getReports] Reports status distribution:", {
-    pending: reports?.filter(r => r.status === 'pending' && !r.deleted).length || 0,
-    resolved: reports?.filter(r => r.status === 'resolved' && !r.deleted).length || 0,
-    deleted: reports?.filter(r => r.deleted).length || 0,
-  })
 
   return (reports || []) as any[]
 }

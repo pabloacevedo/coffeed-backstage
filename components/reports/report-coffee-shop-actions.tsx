@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { PowerOff } from "lucide-react"
+import { deactivateCoffeeShop } from "@/app/(dashboard)/coffee-shops/actions"
 
 interface ReportCoffeeShopActionsProps {
   coffeeShopId: string
@@ -30,17 +30,12 @@ export function ReportCoffeeShopActions({
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleDeactivate = async () => {
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from("coffee_shops")
-        .update({ active: false })
-        .eq("id", coffeeShopId)
-
-      if (error) throw error
+      // ✅ Ahora usa Server Action con validación de admin server-side
+      await deactivateCoffeeShop(coffeeShopId)
 
       toast.success(`${coffeeShopName} ha sido desactivada`)
       setOpen(false)

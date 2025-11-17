@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Coffee } from "lucide-react"
+import { CoffeedLogo } from "@/components/coffeed-logo"
 import { toast } from "sonner"
 
 export default function LoginPage() {
@@ -51,17 +51,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 via-white to-amber-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600">
-            <Coffee className="h-8 w-8 text-white" />
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 p-4">
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <Card className="w-full max-w-md shadow-2xl border-0 relative z-10">
+        <CardHeader className="space-y-6 text-center pb-8">
+          <div className="mx-auto relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 rounded-3xl blur-md opacity-50"></div>
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-purple-600 to-purple-700 shadow-lg">
+              <CoffeedLogo size={50} />
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-2xl font-bold">Coffeed Backstage</CardTitle>
-            <CardDescription>
-              Panel de administración para gestionar cafeterías
+          <div className="space-y-2">
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+              Coffeed
+            </CardTitle>
+            <CardDescription className="text-base">
+              Panel de Administración
             </CardDescription>
+            <p className="text-xs text-muted-foreground">
+              Gestiona cafeterías, usuarios y contenido
+            </p>
           </div>
         </CardHeader>
         <CardContent>

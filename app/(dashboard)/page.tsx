@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { Coffee, Users, Star, Flag, TrendingUp, Eye, ArrowRight, ExternalLink } from "lucide-react"
+import { Coffee, Users, Star, Flag, TrendingUp, Eye, ArrowRight, ExternalLink, Sparkles } from "lucide-react"
 import Link from "next/link"
+import { CoffeedLogo } from "@/components/coffeed-logo"
 
 async function getStats() {
   const supabase = await createServerSupabaseClient()
@@ -260,10 +261,10 @@ async function DashboardContent() {
       </div>
 
       {/* Welcome Message */}
-      <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
+      <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-orange-600" />
+            <TrendingUp className="h-5 w-5 text-purple-600" />
             Bienvenido a Coffeed Backstage
           </CardTitle>
           <CardDescription>
@@ -284,11 +285,19 @@ async function DashboardContent() {
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Resumen general de la plataforma Coffeed
-        </p>
+      <div className="flex items-center gap-4">
+        <div className="rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 p-2.5 shadow-lg">
+          <CoffeedLogo size={40} />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            Dashboard
+            <Sparkles className="h-6 w-6 text-purple-500" />
+          </h1>
+          <p className="text-muted-foreground">
+            Resumen general de la plataforma Coffeed
+          </p>
+        </div>
       </div>
 
       <Suspense

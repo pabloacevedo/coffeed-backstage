@@ -11,6 +11,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Coffeed Backstage - Admin Panel",
   description: "Panel de administración para Coffeed App",
+  icons: {
+    icon: "/coffeed-logo.png",
+    shortcut: "/coffeed-logo.png",
+    apple: "/coffeed-logo.png",
+  },
 };
 
 export default function RootLayout({

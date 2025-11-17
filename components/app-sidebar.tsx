@@ -37,6 +37,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { CoffeedLogo } from "@/components/coffeed-logo"
+import { Badge } from "@/components/ui/badge"
 
 const navItems = [
   {
@@ -92,14 +94,19 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-6 py-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Coffee className="h-5 w-5 text-primary-foreground" />
+      <SidebarHeader className="border-b px-6 py-5">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 p-1.5 shadow-md">
+            <CoffeedLogo size={28} />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-semibold">Coffeed</span>
-            <span className="text-xs text-muted-foreground">Backstage</span>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+                Coffeed
+              </span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Admin</Badge>
+            </div>
+            <span className="text-[11px] text-muted-foreground font-medium">Panel de Administración</span>
           </div>
         </div>
       </SidebarHeader>

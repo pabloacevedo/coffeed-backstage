@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
+import { requireAdmin } from "@/lib/auth/admin"
 
 export async function resolveReport(reportId: string) {
-  console.log("[Server Action] Resolving report:", reportId)
+  // ✅ VALIDACIÓN CRÍTICA: Verificar que el usuario sea admin
+  await requireAdmin()
   const supabase = createAdminSupabaseClient()
 
   const { data, error } = await supabase
@@ -14,12 +16,12 @@ export async function resolveReport(reportId: string) {
     .select()
 
   if (error) {
-    console.error("[Server Action] Error resolving report:", error)
-    throw new Error(error.message)
+    throw new Error("Error al resolver el reporte")
   }
 
-  console.log("[Server Action] Report resolved successfully:", data)
-  console.log("[Server Action] Revalidating path: /reports")
+  if (!data || data.length === 0) {
+    throw new Error("Reporte no encontrado")
+  }
 
   revalidatePath("/reports", "page")
 
@@ -27,7 +29,8 @@ export async function resolveReport(reportId: string) {
 }
 
 export async function dismissReport(reportId: string) {
-  console.log("[Server Action] Dismissing report:", reportId)
+  // ✅ VALIDACIÓN CRÍTICA: Verificar que el usuario sea admin
+  await requireAdmin()
   const supabase = createAdminSupabaseClient()
 
   const { data, error } = await supabase
@@ -37,12 +40,12 @@ export async function dismissReport(reportId: string) {
     .select()
 
   if (error) {
-    console.error("[Server Action] Error dismissing report:", error)
-    throw new Error(error.message)
+    throw new Error("Error al descartar el reporte")
   }
 
-  console.log("[Server Action] Report dismissed successfully:", data)
-  console.log("[Server Action] Revalidating path: /reports")
+  if (!data || data.length === 0) {
+    throw new Error("Reporte no encontrado")
+  }
 
   revalidatePath("/reports", "page")
 

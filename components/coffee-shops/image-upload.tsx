@@ -81,7 +81,6 @@ export function ImageUpload({ coffeeShopId, coffeeShopName, currentImage }: Imag
         })
 
       if (uploadError) {
-        console.error("Upload error:", uploadError)
         throw uploadError
       }
 
@@ -105,8 +104,8 @@ export function ImageUpload({ coffeeShopId, coffeeShopName, currentImage }: Imag
           await supabase.storage
             .from('images')
             .remove([oldPath])
-        } catch (err) {
-          console.warn("Could not delete old image:", err)
+        } catch {
+          // Silently fail - old image deletion is not critical
         }
       }
 
@@ -116,7 +115,6 @@ export function ImageUpload({ coffeeShopId, coffeeShopName, currentImage }: Imag
       setPreview(null)
       router.refresh()
     } catch (error: any) {
-      console.error("Error uploading image:", error)
       toast.error(error.message || "Error al subir la imagen")
     } finally {
       setLoading(false)
