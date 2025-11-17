@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Edit } from "lucide-react"
+import { Edit, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 import { updateUser } from "@/app/(dashboard)/users/actions"
 
@@ -31,6 +31,8 @@ export function EditUserDialog({ user }: { user: User }) {
   const [loading, setLoading] = useState(false)
   const [fullName, setFullName] = useState(user.full_name || "")
   const [isAdmin, setIsAdmin] = useState(user.isAdmin || false)
+  const [newPassword, setNewPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,10 +43,12 @@ export function EditUserDialog({ user }: { user: User }) {
       await updateUser(user.id, {
         full_name: fullName.trim() || null,
         isAdmin,
+        newPassword: newPassword.trim() || undefined,
       })
 
       toast.success("Usuario actualizado correctamente")
       setOpen(false)
+      setNewPassword("") // Limpiar contraseña
       router.refresh()
     } catch (error: any) {
       toast.error(error.message || "Error al actualizar usuario")
@@ -84,6 +88,35 @@ export function EditUserDialog({ user }: { user: User }) {
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Ingresa el nombre completo"
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new_password">Nueva contraseña</Label>
+              <div className="relative">
+                <Input
+                  id="new_password"
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Dejar vacío para no cambiar"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Mínimo 6 caracteres. Dejar vacío para mantener la actual
+              </p>
             </div>
             <div className="flex items-center justify-between space-x-2">
               <div className="space-y-0.5">
