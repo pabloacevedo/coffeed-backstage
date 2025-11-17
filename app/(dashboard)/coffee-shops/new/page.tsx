@@ -120,16 +120,29 @@ export default function NewCoffeeShopPage() {
 
       if (addressError) throw addressError
 
-      // 3. Crear contacto si hay teléfono o website
-      if (formData.phone || formData.website || formData.googleMapsUrl) {
+      // 3. Crear contactos
+      const contactsToInsert = []
+
+      if (formData.phone) {
+        contactsToInsert.push({
+          coffee_shop_id: coffeeShop.id,
+          type: 'phone',
+          value: formData.phone,
+        })
+      }
+
+      if (formData.website) {
+        contactsToInsert.push({
+          coffee_shop_id: coffeeShop.id,
+          type: 'web',
+          value: formData.website,
+        })
+      }
+
+      if (contactsToInsert.length > 0) {
         const { error: contactError } = await supabase
           .from('contacts')
-          .insert({
-            coffee_shop_id: coffeeShop.id,
-            phone: formData.phone || null,
-            website: formData.website || null,
-            google_maps_url: formData.googleMapsUrl || null,
-          })
+          .insert(contactsToInsert)
 
         if (contactError) throw contactError
       }
