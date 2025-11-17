@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -10,16 +10,19 @@ import { CoffeedLogo } from "@/components/coffeed-logo"
 
 async function getStats() {
   const supabase = await createServerSupabaseClient()
+  const adminSupabase = createAdminSupabaseClient()
+
+  // Get users count from auth.users
+  const { data: { users }, error: usersError } = await adminSupabase.auth.admin.listUsers()
+  const usersCount = users?.length || 0
 
   const [
     { count: coffeeShopsCount },
-    { count: usersCount },
     { count: reviewsCount },
     { count: reportsCount },
     { count: viewsCount },
   ] = await Promise.all([
     supabase.from("coffee_shops").select("*", { count: "exact", head: true }).eq("deleted", false),
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("reviews").select("*", { count: "exact", head: true }).eq("deleted", false),
     supabase.from("reports").select("*", { count: "exact", head: true }).eq("deleted", false).eq("status", "pending"),
     supabase.from("views").select("*", { count: "exact", head: true }),
