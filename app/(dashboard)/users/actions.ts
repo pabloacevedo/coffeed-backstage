@@ -9,6 +9,7 @@ export async function updateUser(
   data: {
     full_name: string | null
     isAdmin: boolean
+    newPassword?: string
   }
 ) {
   // ✅ VALIDACIÓN CRÍTICA: Verificar que el usuario sea admin ANTES de cualquier operación
@@ -19,6 +20,22 @@ export async function updateUser(
     // Validación adicional: No permitir que un admin se quite sus propios permisos
     if (userId === adminUser.id && !data.isAdmin) {
       throw new Error("No puedes quitarte tus propios permisos de administrador")
+    }
+
+    // Update password if provided
+    if (data.newPassword && data.newPassword.trim()) {
+      if (data.newPassword.length < 6) {
+        throw new Error("La contraseña debe tener al menos 6 caracteres")
+      }
+
+      const { error: passwordError } = await supabase.auth.admin.updateUserById(
+        userId,
+        { password: data.newPassword }
+      )
+
+      if (passwordError) {
+        throw new Error("Error al actualizar la contraseña")
+      }
     }
 
     // Update profile (full_name)
