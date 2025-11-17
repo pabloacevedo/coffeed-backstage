@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/auth/admin"
-import { extractPlaceIdFromUrl } from "@/lib/google-maps/extract-place-id"
+import { extractPlaceIdFromUrl, expandShortUrl } from "@/lib/google-maps/extract-place-id"
 import { getPlaceDetails, parseAddress, parseOpeningHours, getPhotoUrl } from "@/lib/google-maps/places-api"
 import { generateCoffeeShopDescription } from "@/lib/openai/generate-description"
 
@@ -72,8 +72,24 @@ export async function importFromGoogleMaps(googleMapsUrl: string) {
   await requireAdmin()
 
   try {
-    // Paso 1: Extraer el Place ID de la URL
+    // Paso 1: Expandir URL corta si es necesario
+    let urlToProcess = googleMapsUrl
     let placeId = extractPlaceIdFromUrl(googleMapsUrl)
+
+    if (placeId === 'NEEDS_EXPANSION') {
+      // URL corta detectada, expandirla primero
+      const expandedUrl = await expandShortUrl(googleMapsUrl)
+
+      if (!expandedUrl) {
+        return {
+          success: false,
+          error: "No se pudo expandir la URL corta de Google Maps. Intenta con la URL completa.",
+        }
+      }
+
+      urlToProcess = expandedUrl
+      placeId = extractPlaceIdFromUrl(expandedUrl)
+    }
 
     if (!placeId) {
       return {

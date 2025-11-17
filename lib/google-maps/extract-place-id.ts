@@ -41,13 +41,20 @@ export function extractPlaceIdFromUrl(url: string): string | null {
  */
 export async function expandShortUrl(shortUrl: string): Promise<string | null> {
   try {
+    // Usar fetch con redirect: 'follow' para obtener la URL final
     const response = await fetch(shortUrl, {
-      method: 'HEAD',
-      redirect: 'manual',
+      method: 'GET',
+      redirect: 'follow',
     })
 
-    const location = response.headers.get('location')
-    return location
+    // La URL final después de todas las redirecciones
+    const finalUrl = response.url
+
+    if (finalUrl && finalUrl !== shortUrl) {
+      return finalUrl
+    }
+
+    return null
   } catch (error) {
     console.error('Error expanding short URL:', error)
     return null
