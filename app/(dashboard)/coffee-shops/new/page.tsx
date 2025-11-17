@@ -151,9 +151,10 @@ export default function NewCoffeeShopPage() {
       const schedulesToInsert = formData.schedule.map((s) => ({
         coffee_shop_id: coffeeShop.id,
         day_of_week: s.dayOfWeek,
-        open_time: s.openTime,
-        close_time: s.closeTime,
-        is_closed: s.isClosed,
+        open_time: s.isClosed ? null : s.openTime,
+        close_time: s.isClosed ? null : s.closeTime,
+        closed: s.isClosed,
+        deleted: false,
       }))
 
       const { error: scheduleError } = await supabase
