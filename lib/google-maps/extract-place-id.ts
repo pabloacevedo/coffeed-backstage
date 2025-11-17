@@ -4,29 +4,36 @@
  */
 export function extractPlaceIdFromUrl(url: string): string | null {
   try {
-    // Formato 1: https://www.google.com/maps/place/...?cid=123456789
-    const cidMatch = url.match(/[?&]cid=(\d+)/)
-    if (cidMatch) {
-      return cidMatch[1]
-    }
-
-    // Formato 2: https://www.google.com/maps/place/Name/@lat,lng,zoom/data=!4m6!3m5!1s0x123:0x456!8m2!3d...
-    const placeIdMatch = url.match(/!1s([^!]+)/)
-    if (placeIdMatch) {
-      return placeIdMatch[1]
-    }
-
-    // Formato 3: https://maps.app.goo.gl/... (URL corta)
+    // Formato 1: https://maps.app.goo.gl/... (URL corta)
     // Estas URLs necesitan ser expandidas primero
     if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
-      // Retornamos null para indicar que necesitamos expandir la URL
       return 'NEEDS_EXPANSION'
     }
 
-    // Formato 4: ftid (feature ID)
-    const ftidMatch = url.match(/!1s([A-Za-z0-9_-]+):0x([A-Za-z0-9]+)/)
-    if (ftidMatch) {
-      return `${ftidMatch[1]}:0x${ftidMatch[2]}`
+    // Formato 2: ChIJ... (Place ID formato moderno)
+    // Ejemplo: !1s0ChIJN3F_UZIEdkgRMAXkhrsMnUk
+    const modernPlaceIdMatch = url.match(/!1s(ChIJ[A-Za-z0-9_-]+)/)
+    if (modernPlaceIdMatch) {
+      return modernPlaceIdMatch[1]
+    }
+
+    // Formato 3: Buscar en el data parameter
+    // Ejemplo: data=!4m6!3m5!1sChIJN3F_UZIEdkgRMAXkhrsMnUk
+    const dataPlaceIdMatch = url.match(/data=[^&]*!1s(ChIJ[A-Za-z0-9_-]+)/)
+    if (dataPlaceIdMatch) {
+      return dataPlaceIdMatch[1]
+    }
+
+    // Formato 4: CID (Customer ID)
+    const cidMatch = url.match(/[?&]cid=(\d+)/)
+    if (cidMatch) {
+      return `CID:${cidMatch[1]}`
+    }
+
+    // Formato 5: Buscar cualquier ChIJ en la URL
+    const anyChIJMatch = url.match(/ChIJ[A-Za-z0-9_-]+/)
+    if (anyChIJMatch) {
+      return anyChIJMatch[0]
     }
 
     return null

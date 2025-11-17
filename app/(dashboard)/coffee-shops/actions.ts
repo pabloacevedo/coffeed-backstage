@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/auth/admin"
 import { extractPlaceIdFromUrl, expandShortUrl } from "@/lib/google-maps/extract-place-id"
-import { getPlaceDetails, parseAddress, parseOpeningHours, getPhotoUrl } from "@/lib/google-maps/places-api"
+import { getPlaceDetails, parseAddress, parseOpeningHours, getPhotoUrl, findPlaceByCoordinatesAndName } from "@/lib/google-maps/places-api"
 import { generateCoffeeShopDescription } from "@/lib/openai/generate-description"
 
 /**
@@ -72,12 +72,17 @@ export async function importFromGoogleMaps(googleMapsUrl: string) {
   await requireAdmin()
 
   try {
+    console.log('🔗 URL original:', googleMapsUrl)
+
     // Paso 1: Expandir URL corta si es necesario
     let urlToProcess = googleMapsUrl
     let placeId = extractPlaceIdFromUrl(googleMapsUrl)
 
+    console.log('🎯 Place ID inicial:', placeId)
+
     if (placeId === 'NEEDS_EXPANSION') {
       // URL corta detectada, expandirla primero
+      console.log('📍 Expandiendo URL corta...')
       const expandedUrl = await expandShortUrl(googleMapsUrl)
 
       if (!expandedUrl) {
@@ -87,14 +92,22 @@ export async function importFromGoogleMaps(googleMapsUrl: string) {
         }
       }
 
+      console.log('✅ URL expandida:', expandedUrl)
       urlToProcess = expandedUrl
       placeId = extractPlaceIdFromUrl(expandedUrl)
+      console.log('🎯 Place ID extraído de URL expandida:', placeId)
     }
 
+    // Si no se encontró Place ID, intentar buscar por nombre y coordenadas
     if (!placeId) {
-      return {
-        success: false,
-        error: "No se pudo extraer el Place ID de la URL. Verifica que sea una URL válida de Google Maps.",
+      console.log('⚠️ No se encontró Place ID, intentando búsqueda por nombre y coordenadas...')
+      placeId = await findPlaceByCoordinatesAndName(urlToProcess)
+
+      if (!placeId) {
+        return {
+          success: false,
+          error: "No se pudo encontrar la cafetería en Google Maps. Intenta con una URL diferente o verifica que el lugar exista.",
+        }
       }
     }
 

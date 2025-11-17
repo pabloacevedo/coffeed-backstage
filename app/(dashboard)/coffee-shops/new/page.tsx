@@ -105,6 +105,8 @@ export default function NewCoffeeShopPage() {
           name: formData.name,
           description: formData.description || null,
           image: formData.imageUrl || null,
+          location_latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+          location_longitude: formData.longitude ? parseFloat(formData.longitude) : null,
           active: true,
         })
         .select()
@@ -122,8 +124,6 @@ export default function NewCoffeeShopPage() {
           state: formData.state,
           country: formData.country,
           postal_code: formData.postalCode || null,
-          latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-          longitude: formData.longitude ? parseFloat(formData.longitude) : null,
         })
 
       if (addressError) throw addressError
