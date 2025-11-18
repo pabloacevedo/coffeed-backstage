@@ -105,7 +105,7 @@ export async function approveCoffeeShop(shopId: string) {
       status: "approved",
       active: true,
       reviewed_at: new Date().toISOString()
-    })
+    } as any)
     .eq("id", shopId)
     .select()
 
@@ -142,7 +142,7 @@ export async function rejectCoffeeShop(shopId: string, rejectionReason: string) 
       status: "rejected",
       reviewed_at: new Date().toISOString(),
       rejection_reason: rejectionReason
-    })
+    } as any)
     .eq("id", shopId)
     .select()
 
