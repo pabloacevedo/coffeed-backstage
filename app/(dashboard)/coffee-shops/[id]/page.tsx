@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { createAdminSupabaseClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,7 +13,8 @@ import { ImageViewer } from "@/components/coffee-shops/image-viewer"
 import { DeleteButton } from "@/components/coffee-shops/delete-button"
 
 async function getCoffeeShop(id: string) {
-  const supabase = await createServerSupabaseClient()
+  // ✅ Usar cliente admin para poder ver todas las cafeterías, incluyendo las inactivas
+  const supabase = createAdminSupabaseClient()
 
   const { data: shop, error } = await supabase
     .from("coffee_shops")

@@ -92,6 +92,76 @@ export async function deactivateCoffeeShop(shopId: string) {
 }
 
 /**
+ * Aprueba una cafetería pendiente
+ */
+export async function approveCoffeeShop(shopId: string) {
+  // ✅ VALIDACIÓN CRÍTICA: Verificar que el usuario sea admin
+  await requireAdmin()
+  const supabase = createAdminSupabaseClient()
+
+  const { data, error } = await supabase
+    .from("coffee_shops")
+    .update({
+      status: "approved",
+      active: true,
+      reviewed_at: new Date().toISOString()
+    })
+    .eq("id", shopId)
+    .select()
+
+  if (error) {
+    throw new Error("Error al aprobar la cafetería")
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error("Cafetería no encontrada")
+  }
+
+  revalidatePath("/pending-shops", "page")
+  revalidatePath("/coffee-shops", "page")
+  revalidatePath(`/coffee-shops/${shopId}`, "page")
+
+  return { success: true, data: data[0] }
+}
+
+/**
+ * Rechaza una cafetería pendiente
+ */
+export async function rejectCoffeeShop(shopId: string, rejectionReason: string) {
+  // ✅ VALIDACIÓN CRÍTICA: Verificar que el usuario sea admin
+  await requireAdmin()
+  const supabase = createAdminSupabaseClient()
+
+  if (!rejectionReason || !rejectionReason.trim()) {
+    throw new Error("La razón del rechazo es requerida")
+  }
+
+  const { data, error } = await supabase
+    .from("coffee_shops")
+    .update({
+      status: "rejected",
+      reviewed_at: new Date().toISOString(),
+      rejection_reason: rejectionReason
+    })
+    .eq("id", shopId)
+    .select()
+
+  if (error) {
+    throw new Error("Error al rechazar la cafetería")
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error("Cafetería no encontrada")
+  }
+
+  revalidatePath("/pending-shops", "page")
+  revalidatePath("/coffee-shops", "page")
+  revalidatePath(`/coffee-shops/${shopId}`, "page")
+
+  return { success: true, data: data[0] }
+}
+
+/**
  * Importa una cafetería desde Google Maps usando su URL
  */
 export async function importFromGoogleMaps(googleMapsUrl: string) {

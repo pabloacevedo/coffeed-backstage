@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { createAdminSupabaseClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,7 +7,8 @@ import { Eye } from "lucide-react"
 import Link from "next/link"
 
 async function getCoffeeShop(id: string) {
-  const supabase = await createServerSupabaseClient()
+  // ✅ Usar cliente admin para poder editar todas las cafeterías, incluyendo las inactivas
+  const supabase = createAdminSupabaseClient()
 
   const { data: shop, error } = await supabase
     .from("coffee_shops")

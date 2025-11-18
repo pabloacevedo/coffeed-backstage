@@ -10,6 +10,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Clock,
 } from "lucide-react"
 
 import {
@@ -50,6 +51,11 @@ const navItems = [
     title: "Cafeterías",
     icon: Coffee,
     url: "/coffee-shops",
+  },
+  {
+    title: "Pendientes",
+    icon: Clock,
+    url: "/pending-shops",
   },
   {
     title: "Usuarios",
