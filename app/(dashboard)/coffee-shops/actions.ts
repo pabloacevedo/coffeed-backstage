@@ -208,6 +208,28 @@ export async function importFromGoogleMaps(googleMapsUrl: string) {
       }
     }
 
+    // Si es un CID, convertirlo a Place ID
+    if (placeId.startsWith('CID:')) {
+      console.log('🔄 Convirtiendo CID a Place ID...')
+      const { findPlaceByCid } = await import('@/lib/google-maps/places-api')
+      const convertedPlaceId = await findPlaceByCid(placeId.replace('CID:', ''))
+
+      if (!convertedPlaceId) {
+        console.log('⚠️ No se pudo convertir CID, intentando búsqueda por nombre y coordenadas...')
+        placeId = await findPlaceByCoordinatesAndName(urlToProcess)
+
+        if (!placeId) {
+          return {
+            success: false,
+            error: "No se pudo encontrar la cafetería en Google Maps. Intenta con una URL diferente.",
+          }
+        }
+      } else {
+        placeId = convertedPlaceId
+        console.log('✅ CID convertido a Place ID:', placeId)
+      }
+    }
+
     // Paso 2: Obtener detalles del lugar desde Google Places API
     const placeDetails = await getPlaceDetails(placeId)
 

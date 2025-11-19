@@ -67,7 +67,12 @@ export function ImportFromGoogleMaps({
     }
 
     // Validate it's a Google Maps URL
-    if (!googleMapsUrl.includes("google.com/maps") && !googleMapsUrl.includes("goo.gl")) {
+    const isGoogleMapsUrl =
+      googleMapsUrl.includes("google.com/maps") ||
+      googleMapsUrl.includes("goo.gl") ||
+      googleMapsUrl.includes("maps.app.goo.gl")
+
+    if (!isGoogleMapsUrl) {
       toast.error("La URL debe ser de Google Maps")
       return
     }
@@ -131,7 +136,7 @@ export function ImportFromGoogleMaps({
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Ejemplo: https://maps.google.com/maps/place/Starbucks+Coffee
+              Soporta: google.com/maps, goo.gl, maps.app.goo.gl
             </p>
           </div>
 

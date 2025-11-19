@@ -11,6 +11,7 @@ import { ScheduleManager } from "@/components/coffee-shops/schedule-manager"
 import { ContactsManager } from "@/components/coffee-shops/contacts-manager"
 import { ImageViewer } from "@/components/coffee-shops/image-viewer"
 import { DeleteButton } from "@/components/coffee-shops/delete-button"
+import { MapModal } from "@/components/coffee-shops/map-modal"
 
 async function getCoffeeShop(id: string) {
   // ✅ Usar cliente admin para poder ver todas las cafeterías, incluyendo las inactivas
@@ -66,16 +67,16 @@ export default async function CoffeeShopDetailPage({
   const resolvedReports = activeReports.filter((r: any) => r.status === 'resolved')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-0">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">{shop.name}</h1>
-          <p className="text-muted-foreground">{shop.description || "Sin descripción"}</p>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-1 flex-1">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{shop.name}</h1>
+          <p className="text-sm md:text-base text-muted-foreground">{shop.description || "Sin descripción"}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <ToggleActiveButton shopId={shop.id} currentStatus={shop.active} />
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link href={`/coffee-shops/${shop.id}/edit`}>
               <Edit className="mr-2 h-4 w-4" />
               Editar
@@ -85,100 +86,113 @@ export default async function CoffeeShopDetailPage({
         </div>
       </div>
 
-      {/* Status & Image */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Estado</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Estado actual</p>
-              <Badge variant={shop.active ? "default" : "secondary"} className="text-sm">
-                {shop.active ? "Activa" : "Inactiva"}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Calificación promedio</p>
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="text-2xl font-bold">{avgRating.toFixed(1)}</span>
-                <span className="text-sm text-muted-foreground">
-                  ({shop.reviews?.length || 0} reseñas)
-                </span>
+      {/* Status Cards */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-3 gap-6">
+            {/* Estado */}
+            <div className="flex flex-col items-center sm:items-start sm:flex-row sm:gap-3">
+              <div className={`h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-lg flex items-center justify-center ${shop.active ? 'bg-green-100 dark:bg-green-900/20' : 'bg-gray-100 dark:bg-gray-800'
+                }`}>
+                <div className={`h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full ${shop.active ? 'bg-green-500' : 'bg-gray-400'
+                  }`} />
+              </div>
+              <div className="text-center sm:text-left mt-1.5 sm:mt-0">
+                <p className="text-xs text-muted-foreground leading-none mb-1">Estado</p>
+                <p className="font-semibold text-xs sm:text-sm">{shop.active ? "Activa" : "Inactiva"}</p>
               </div>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Reportes</p>
-              <div className="flex items-center gap-2">
-                <Flag className="h-5 w-5 text-red-600" />
-                <span className="text-2xl font-bold">{pendingReports.length}</span>
-                <span className="text-sm text-muted-foreground">
-                  pendientes
-                </span>
-              </div>
-              {activeReports.length > 0 && (
-                <Button variant="outline" size="sm" asChild className="mt-2 w-full">
-                  <Link href={`/reports?coffee_shop=${shop.id}`}>
-                    <Flag className="mr-2 h-4 w-4" />
-                    Ver Reportes ({activeReports.length})
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Imagen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ImageViewer image={shop.image} name={shop.name} coffeeShopId={shop.id} />
-          </CardContent>
-        </Card>
-      </div>
+            {/* Calificación */}
+            <div className="flex flex-col items-center sm:items-start sm:flex-row sm:gap-3">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-lg bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-500 text-yellow-500" />
+              </div>
+              <div className="text-center sm:text-left mt-1.5 sm:mt-0">
+                <p className="text-xs text-muted-foreground leading-none mb-1">Rating</p>
+                <div className="flex items-baseline gap-1 justify-center sm:justify-start">
+                  <p className="font-bold text-base sm:text-lg leading-none">{avgRating.toFixed(1)}</p>
+                  <p className="text-xs text-muted-foreground">({shop.reviews?.length || 0})</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Reportes */}
+            <div className="flex flex-col items-center sm:items-start sm:flex-row sm:gap-3">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-lg bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                <Flag className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+              </div>
+              <div className="text-center sm:text-left mt-1.5 sm:mt-0">
+                <p className="text-xs text-muted-foreground leading-none mb-1">Reportes</p>
+                <p className="font-bold text-base sm:text-lg leading-none">{pendingReports.length}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Ver Reportes Button - Solo si hay reportes */}
+      {activeReports.length > 0 && (
+        <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
+          <Link href={`/reports?coffee_shop=${shop.id}`}>
+            <Flag className="mr-2 h-4 w-4" />
+            Ver Todos los Reportes ({activeReports.length})
+          </Link>
+        </Button>
+      )}
+
+      {/* Imagen */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg md:text-xl gap-4">Imagen</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ImageViewer image={shop.image} name={shop.name} coffeeShopId={shop.id} />
+        </CardContent>
+      </Card>
 
       {/* Tabs */}
       <Tabs defaultValue="info" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="info">Información</TabsTrigger>
-          <TabsTrigger value="schedules">Horarios</TabsTrigger>
-          <TabsTrigger value="reviews">Reseñas ({shop.reviews?.length || 0})</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="info" className="text-xs sm:text-sm">Información</TabsTrigger>
+          <TabsTrigger value="schedules" className="text-xs sm:text-sm">Horarios</TabsTrigger>
+          <TabsTrigger value="reviews" className="text-xs sm:text-sm">Reseñas ({shop.reviews?.length || 0})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info" className="space-y-4">
           {/* Address */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                <MapPin className="h-4 w-4 md:h-5 md:w-5" />
                 Dirección
               </CardTitle>
             </CardHeader>
             <CardContent>
               {address ? (
                 <div className="space-y-2">
-                  <p className="font-medium">{address.street}</p>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm md:text-base font-medium">{address.street}</p>
+                  <p className="text-sm md:text-base text-muted-foreground">
                     {address.city}, {address.country}
                   </p>
                   {shop.location_latitude && shop.location_longitude && (
-                    <p className="text-sm text-muted-foreground">
-                      Coordenadas: {shop.location_latitude}, {shop.location_longitude}
-                    </p>
+                    <MapModal
+                      latitude={shop.location_latitude}
+                      longitude={shop.location_longitude}
+                      name={shop.name}
+                    />
                   )}
                 </div>
               ) : (
-                <p className="text-muted-foreground">Sin dirección registrada</p>
+                <p className="text-sm md:text-base text-muted-foreground">Sin dirección registrada</p>
               )}
             </CardContent>
           </Card>
 
           {/* Contacts */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle>Contacto</CardTitle>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-4">
+              <CardTitle className="text-lg md:text-xl">Contacto</CardTitle>
               <ContactsManager
                 coffeeShopId={shop.id}
                 existingContacts={shop.contacts || []}
@@ -209,14 +223,14 @@ export default async function CoffeeShopDetailPage({
 
                     return (
                       <div key={contact.id} className="flex items-center gap-3">
-                        {contact.type === "phone" && <Phone className="h-4 w-4 text-muted-foreground" />}
-                        {contact.type === "instagram" && <Instagram className="h-4 w-4 text-muted-foreground" />}
-                        {contact.type === "web" && <Globe className="h-4 w-4 text-muted-foreground" />}
+                        {contact.type === "phone" && <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+                        {contact.type === "instagram" && <Instagram className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+                        {contact.type === "web" && <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                         <a
                           href={href}
                           target={target}
                           rel={target === "_blank" ? "noopener noreferrer" : undefined}
-                          className="text-sm text-primary hover:underline"
+                          className="text-sm text-primary hover:underline break-all"
                         >
                           {contact.value}
                         </a>
@@ -226,7 +240,7 @@ export default async function CoffeeShopDetailPage({
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">Sin información de contacto</p>
+                  <p className="text-sm md:text-base text-muted-foreground mb-4">Sin información de contacto</p>
                   <ContactsManager
                     coffeeShopId={shop.id}
                     existingContacts={[]}
@@ -239,10 +253,10 @@ export default async function CoffeeShopDetailPage({
 
         <TabsContent value="schedules">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-4">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                  <Clock className="h-4 w-4 md:h-5 md:w-5" />
                   Horarios de atención
                 </CardTitle>
               </div>
@@ -258,11 +272,11 @@ export default async function CoffeeShopDetailPage({
                     .sort((a: any, b: any) => a.day_of_week - b.day_of_week)
                     .map((schedule: any) => (
                       <div key={schedule.id} className="flex items-center justify-between border-b pb-2 last:border-0">
-                        <span className="font-medium">{daysOfWeek[schedule.day_of_week]}</span>
+                        <span className="text-sm md:text-base font-medium">{daysOfWeek[schedule.day_of_week]}</span>
                         {schedule.closed ? (
-                          <Badge variant="secondary">Cerrado</Badge>
+                          <Badge variant="secondary" className="text-xs md:text-sm">Cerrado</Badge>
                         ) : (
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-xs md:text-sm text-muted-foreground">
                             {schedule.open_time} - {schedule.close_time}
                           </span>
                         )}
@@ -271,7 +285,7 @@ export default async function CoffeeShopDetailPage({
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">Sin horarios registrados</p>
+                  <p className="text-sm md:text-base text-muted-foreground mb-4">Sin horarios registrados</p>
                   <ScheduleManager
                     coffeeShopId={shop.id}
                     existingSchedules={[]}
@@ -287,13 +301,13 @@ export default async function CoffeeShopDetailPage({
             shop.reviews.map((review: any, index: number) => (
               <Card key={review.created_at + index}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold">
+                      <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-sm sm:text-base flex-shrink-0">
                         U
                       </div>
                       <div>
-                        <p className="font-medium">Usuario</p>
+                        <p className="text-sm sm:text-base font-medium">Usuario</p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(review.created_at).toLocaleDateString("es-ES", {
                             day: "numeric",
@@ -305,14 +319,14 @@ export default async function CoffeeShopDetailPage({
                     </div>
                     <div className="flex items-center gap-1">
                       {Array.from({ length: review.rating }).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <Star key={i} className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
                   </div>
                 </CardHeader>
                 {review.comment && (
                   <CardContent>
-                    <p className="text-sm">{review.comment}</p>
+                    <p className="text-sm md:text-base">{review.comment}</p>
                   </CardContent>
                 )}
               </Card>
@@ -320,7 +334,7 @@ export default async function CoffeeShopDetailPage({
           ) : (
             <Card>
               <CardContent className="py-8">
-                <p className="text-center text-muted-foreground">
+                <p className="text-center text-sm md:text-base text-muted-foreground">
                   Esta cafetería aún no tiene reseñas
                 </p>
               </CardContent>

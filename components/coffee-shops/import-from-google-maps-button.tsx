@@ -13,6 +13,8 @@ export function ImportFromGoogleMapsButton() {
   const handleImportSuccess = (importedData: any) => {
     // Guardar los datos importados en sessionStorage para que la página de nueva cafetería los recoja
     sessionStorage.setItem('importedCoffeeShopData', JSON.stringify(importedData))
+    // Guardar la ruta de retorno para redirigir después de crear
+    sessionStorage.setItem('returnAfterCreate', '/')
     // Redirigir a la página de nueva cafetería
     router.push('/coffee-shops/new')
     setOpen(false)

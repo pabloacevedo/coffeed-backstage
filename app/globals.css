@@ -119,6 +119,20 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Ocultar el panel de desarrollo de Next.js */
+  #__next-build-watcher,
+  [id^="__next"],
+  nextjs-portal {
+    display: none !important;
+  }
+
+  /* Ocultar todos los elementos relacionados con Next.js dev tools */
+  body > nextjs-portal,
+  body > div[style*="position: fixed"][style*="bottom"],
+  body > div[style*="position: fixed"][style*="z-index: 99999"] {
+    display: none !important;
+  }
 }
 
 @layer utilities {

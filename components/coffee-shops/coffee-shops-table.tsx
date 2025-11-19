@@ -220,19 +220,20 @@ export function CoffeeShopsTable() {
   return (
     <>
       <div className="space-y-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
           <Input
             placeholder="Buscar cafeterías..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm"
+            className="w-full sm:max-w-sm"
           />
-          <div className="ml-auto text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-muted-foreground sm:ml-auto">
             Mostrando {filteredData.length} de {totalCount} cafeterías
           </div>
         </div>
 
-        <div className="rounded-md border">
+        {/* Vista de tabla para desktop */}
+        <div className="hidden md:block rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -355,6 +356,113 @@ export function CoffeeShopsTable() {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Vista de tarjetas para mobile */}
+        <div className="md:hidden space-y-3">
+          {filteredData.length > 0 ? (
+            filteredData.map((shop) => (
+              <div
+                key={shop.id}
+                className="border rounded-lg p-4 space-y-3 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
+                onClick={() => router.push(`/coffee-shops/${shop.id}`)}
+              >
+                <div className="flex items-start gap-3">
+                  {shop.image ? (
+                    <img
+                      src={shop.image}
+                      alt={shop.name}
+                      className="h-16 w-16 rounded-lg object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                      <MapPin className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-base leading-tight mb-1">{shop.name}</h3>
+                    {shop.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                        {shop.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant={shop.active ? "default" : "secondary"} className="text-xs">
+                        {shop.active ? "Activa" : "Inactiva"}
+                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium">{shop.avgRating}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({shop.reviewCount})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/coffee-shops/${shop.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Ver detalles
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/coffee-shops/${shop.id}/edit`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => toggleActive(shop.id, shop.active)}
+                        >
+                          {shop.active ? "Desactivar" : "Activar"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => setDeleteDialog(shop.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Eliminar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {shop.addresses && shop.addresses.length > 0 ? (
+                      <span>
+                        {shop.addresses[0].city}
+                        {shop.addresses[0].country && `, ${shop.addresses[0].country}`}
+                      </span>
+                    ) : (
+                      <span>Sin dirección</span>
+                    )}
+                  </div>
+                  <span>
+                    {new Date(shop.created_at).toLocaleDateString("es-ES", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-12 text-muted-foreground border rounded-lg">
+              {loading && data.length === 0 ? "Cargando cafeterías..." : "No se encontraron cafeterías"}
+            </div>
+          )}
         </div>
 
         {/* Indicador de carga automática */}

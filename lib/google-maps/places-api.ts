@@ -121,6 +121,97 @@ export async function findPlaceByCid(cid: string): Promise<string | null> {
 }
 
 /**
+ * Busca un lugar cercano a coordenadas específicas usando Nearby Search
+ * (más preciso que findplacefromtext cuando tenemos coordenadas exactas)
+ */
+export async function findPlaceByNearbySearch(lat: number, lng: number, name: string): Promise<string | null> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+
+  if (!apiKey) {
+    throw new Error('GOOGLE_MAPS_API_KEY no está configurada')
+  }
+
+  try {
+    console.log('🎯 Buscando lugar cercano con Nearby Search:', { lat, lng, name })
+
+    // Usar Nearby Search con radio pequeño (50m) para mayor precisión
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=50&keyword=${encodeURIComponent(name)}&key=${apiKey}&language=es`
+
+    console.log('🌐 URL de Nearby Search:', searchUrl.replace(apiKey, 'HIDDEN'))
+
+    const response = await fetch(searchUrl)
+    const data = await response.json()
+
+    console.log('📊 Resultado de Nearby Search:', {
+      status: data.status,
+      resultsCount: data.results?.length,
+      firstResult: data.results?.[0]?.name
+    })
+
+    if (data.status === 'OK' && data.results && data.results.length > 0) {
+      // Si hay múltiples resultados, buscar coincidencia de nombre más cercana
+      const exactMatch = data.results.find((result: any) =>
+        result.name.toLowerCase().trim() === name.toLowerCase().trim()
+      )
+
+      if (exactMatch) {
+        console.log('✅ Coincidencia exacta encontrada:', exactMatch.name, exactMatch.place_id)
+        return exactMatch.place_id
+      }
+
+      // Si no hay coincidencia exacta, buscar coincidencia parcial
+      const partialMatch = data.results.find((result: any) =>
+        result.name.toLowerCase().includes(name.toLowerCase()) ||
+        name.toLowerCase().includes(result.name.toLowerCase())
+      )
+
+      if (partialMatch) {
+        console.log('✅ Coincidencia parcial encontrada:', partialMatch.name, partialMatch.place_id)
+        return partialMatch.place_id
+      }
+
+      // Si no hay coincidencia, tomar el primer resultado (más cercano)
+      console.log('⚠️ Sin coincidencia exacta, usando el más cercano:', data.results[0].name)
+      return data.results[0].place_id
+    }
+
+    // Si no encontramos nada en 50m, intentar con radio más amplio (200m)
+    if (data.status === 'ZERO_RESULTS') {
+      console.log('🔄 Ampliando búsqueda a 200m...')
+      const widerSearchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=200&keyword=${encodeURIComponent(name)}&key=${apiKey}&language=es`
+
+      const widerResponse = await fetch(widerSearchUrl)
+      const widerData = await widerResponse.json()
+
+      console.log('📊 Resultado de búsqueda ampliada:', {
+        status: widerData.status,
+        resultsCount: widerData.results?.length
+      })
+
+      if (widerData.status === 'OK' && widerData.results && widerData.results.length > 0) {
+        // Priorizar coincidencia de nombre
+        const match = widerData.results.find((result: any) =>
+          result.name.toLowerCase().includes(name.toLowerCase()) ||
+          name.toLowerCase().includes(result.name.toLowerCase())
+        )
+
+        if (match) {
+          console.log('✅ Encontrado en búsqueda ampliada:', match.name, match.place_id)
+          return match.place_id
+        }
+
+        return widerData.results[0].place_id
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error in nearby search:', error)
+    return null
+  }
+}
+
+/**
  * Busca un lugar por coordenadas y nombre desde la URL de Google Maps
  */
 export async function findPlaceByCoordinatesAndName(url: string): Promise<string | null> {
@@ -131,27 +222,66 @@ export async function findPlaceByCoordinatesAndName(url: string): Promise<string
   }
 
   try {
-    // Extraer el nombre del lugar desde la URL
-    // Formato: /place/Nombre+del+Lugar/@lat,lng
-    const nameMatch = url.match(/\/place\/([^/@]+)/)
-    if (!nameMatch) return null
+    let decodedName = ''
+    let lat: string | null = null
+    let lng: string | null = null
 
-    const encodedName = nameMatch[1]
-    const decodedName = decodeURIComponent(encodedName.replace(/\+/g, ' '))
+    // Formato 1: /place/Nombre+del+Lugar/@lat,lng
+    const nameMatch = url.match(/\/place\/([^/@]+)/)
+    if (nameMatch) {
+      const encodedName = nameMatch[1]
+      decodedName = decodeURIComponent(encodedName.replace(/\+/g, ' '))
+    }
+
+    // Formato 2: ?q=Nombre+del+Lugar (para URLs con parámetro q)
+    if (!decodedName) {
+      const qMatch = url.match(/[?&]q=([^&]+)/)
+      if (qMatch) {
+        decodedName = decodeURIComponent(qMatch[1].replace(/\+/g, ' '))
+        // Limpiar la dirección si viene con formato "Nombre - Dirección"
+        // Ej: "M motel Limache - Avenida Palmira..." -> "M motel Limache"
+        decodedName = decodedName.split(' - ')[0].trim()
+      }
+    }
+
+    if (!decodedName) {
+      console.log('⚠️ No se pudo extraer el nombre del lugar de la URL')
+      return null
+    }
 
     console.log('🔍 Buscando por nombre:', decodedName)
 
-    // Extraer coordenadas
+    // Extraer coordenadas del formato @lat,lng
     const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-    if (!coordsMatch) return null
+    if (coordsMatch) {
+      lat = coordsMatch[1]
+      lng = coordsMatch[2]
+      console.log('📍 Coordenadas encontradas:', { lat, lng })
 
-    const lat = coordsMatch[1]
-    const lng = coordsMatch[2]
+      // Si tenemos coordenadas, usar Nearby Search (más preciso)
+      console.log('🎯 Usando Nearby Search para mayor precisión...')
+      const nearbyResult = await findPlaceByNearbySearch(
+        parseFloat(lat),
+        parseFloat(lng),
+        decodedName
+      )
 
-    console.log('📍 Coordenadas:', { lat, lng })
+      if (nearbyResult) {
+        return nearbyResult
+      }
 
-    // Usar Find Place From Text con location bias
-    const searchUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(decodedName)}&inputtype=textquery&fields=place_id,name&locationbias=circle:500@${lat},${lng}&key=${apiKey}`
+      console.log('⚠️ Nearby Search no encontró resultados, intentando con findplacefromtext...')
+    }
+
+    // Si no tenemos coordenadas o Nearby Search falló, usar findplacefromtext
+    let searchUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(decodedName)}&inputtype=textquery&fields=place_id,name`
+
+    // Agregar location bias si tenemos coordenadas
+    if (lat && lng) {
+      searchUrl += `&locationbias=circle:500@${lat},${lng}`
+    }
+
+    searchUrl += `&key=${apiKey}`
 
     console.log('🌐 URL de búsqueda:', searchUrl.replace(apiKey, 'HIDDEN'))
 

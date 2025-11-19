@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
 	experimental: {
 		webpackMemoryOptimizations: true,
 	},
+	reactStrictMode: true,
 };
 
 export default nextConfig;
