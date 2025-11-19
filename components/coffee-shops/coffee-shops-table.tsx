@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   Table,
   TableBody,
@@ -27,7 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Edit, MoreHorizontal, Trash2, Eye, MapPin, Star } from "lucide-react"
+import { Edit, MoreHorizontal, Trash2, Eye, MapPin, Star, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -47,12 +47,105 @@ interface CoffeeShop {
   reviewCount: number
 }
 
-export function CoffeeShopsTable({ data }: { data: CoffeeShop[] }) {
+const PAGE_SIZE = 500
+
+export function CoffeeShopsTable() {
+  const [data, setData] = useState<CoffeeShop[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [deleteDialog, setDeleteDialog] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [totalCount, setTotalCount] = useState(0)
   const router = useRouter()
   const supabase = createClient()
+
+  // Cargar cafeterías desde Supabase
+  const loadCoffeeShops = useCallback(async (offset: number = 0) => {
+    if (offset === 0) {
+      setLoading(true)
+    } else {
+      setIsLoadingMore(true)
+    }
+
+    try {
+      // Primero obtener el total de cafeterías
+      const { count } = await supabase
+        .from("coffee_shops")
+        .select("*", { count: "exact", head: true })
+        .eq("deleted", false)
+
+      if (count !== null) {
+        setTotalCount(count)
+      }
+
+      // Luego obtener la página actual
+      const { data: coffeeShops, error } = await supabase
+        .from("coffee_shops")
+        .select(`
+          *,
+          addresses(*),
+          schedules(*),
+          contacts(*),
+          reviews(rating)
+        `)
+        .eq("deleted", false)
+        .order("name", { ascending: true })
+        .range(offset, offset + PAGE_SIZE - 1)
+
+      if (error) {
+        console.error('Error fetching coffee shops:', error)
+        toast.error("Error al cargar cafeterías")
+        return
+      }
+
+      // Calcular rating promedio
+      const shopsWithRating = (coffeeShops || []).map((shop: any) => {
+        const ratings = shop.reviews?.map((r: any) => r.rating) || []
+        const avgRating = ratings.length > 0
+          ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length
+          : 0
+
+        return {
+          ...shop,
+          avgRating: Number(avgRating.toFixed(1)),
+          reviewCount: ratings.length,
+        }
+      })
+
+      if (offset === 0) {
+        setData(shopsWithRating)
+      } else {
+        setData(prev => [...prev, ...shopsWithRating])
+      }
+
+      // Verificar si hay más datos
+      setHasMore(coffeeShops && coffeeShops.length === PAGE_SIZE)
+    } catch (error) {
+      console.error('Error loading coffee shops:', error)
+      toast.error("Error al cargar cafeterías")
+    } finally {
+      setLoading(false)
+      setIsLoadingMore(false)
+    }
+  }, [supabase])
+
+  // Cargar datos iniciales
+  useEffect(() => {
+    loadCoffeeShops(0)
+  }, [loadCoffeeShops])
+
+  // Cargar automáticamente el siguiente lote cuando termine el anterior
+  useEffect(() => {
+    if (hasMore && !isLoadingMore && !loading && data.length > 0) {
+      // Esperar un pequeño delay para no saturar
+      const timer = setTimeout(() => {
+        loadCoffeeShops(data.length)
+      }, 100)
+
+      return () => clearTimeout(timer)
+    }
+  }, [data.length, hasMore, isLoadingMore, loading, loadCoffeeShops])
 
   // Función para normalizar texto (remover tildes y caracteres especiales)
   const normalizeText = (text: string) => {
@@ -89,7 +182,8 @@ export function CoffeeShopsTable({ data }: { data: CoffeeShop[] }) {
 
       toast.success("Cafetería eliminada correctamente")
       setDeleteDialog(null)
-      router.refresh()
+      // Recargar datos
+      await loadCoffeeShops(0)
     } catch (error: any) {
       toast.error(error.message || "Error al eliminar cafetería")
     } finally {
@@ -107,11 +201,21 @@ export function CoffeeShopsTable({ data }: { data: CoffeeShop[] }) {
       if (error) throw error
 
       toast.success(`Cafetería ${!currentStatus ? "activada" : "desactivada"}`)
-      router.refresh()
+      // Recargar datos
+      await loadCoffeeShops(0)
     } catch (error: any) {
       toast.error(error.message || "Error al actualizar estado")
     }
   }
+
+  // if (loading && data.length === 0) {
+  //   return (
+  //     <div className="flex items-center justify-center py-12">
+  //       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+  //       <span className="ml-3 text-muted-foreground">Cargando cafeterías...</span>
+  //     </div>
+  //   )
+  // }
 
   return (
     <>
@@ -124,7 +228,7 @@ export function CoffeeShopsTable({ data }: { data: CoffeeShop[] }) {
             className="max-w-sm"
           />
           <div className="ml-auto text-sm text-muted-foreground">
-            {filteredData.length} cafeterías encontradas
+            Mostrando {filteredData.length} de {totalCount} cafeterías
           </div>
         </div>
 
@@ -245,13 +349,29 @@ export function CoffeeShopsTable({ data }: { data: CoffeeShop[] }) {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    No se encontraron cafeterías
+                    {loading && data.length === 0 ? "Cargando cafeterías..." : "No se encontraron cafeterías"}
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
+
+        {/* Indicador de carga automática */}
+        {isLoadingMore && (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">
+              Cargando cafeterías... ({data.length} de {totalCount})
+            </span>
+          </div>
+        )}
+
+        {!hasMore && !isLoadingMore && data.length > 0 && (
+          <div className="text-center py-4 text-sm text-muted-foreground">
+            ✓ Todas las cafeterías cargadas ({totalCount} total)
+          </div>
+        )}
       </div>
 
       <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
