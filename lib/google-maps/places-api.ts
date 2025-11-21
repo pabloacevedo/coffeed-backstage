@@ -123,6 +123,12 @@ export async function findPlaceByCid(cid: string): Promise<string | null> {
 /**
  * Busca un lugar cercano a coordenadas específicas usando Nearby Search
  * (más preciso que findplacefromtext cuando tenemos coordenadas exactas)
+ *
+ * Estrategia: Las coordenadas de Google Maps URL son exactas, así que:
+ * 1. Primero buscar en radio muy pequeño (15m) sin filtro de nombre
+ * 2. Si hay un solo resultado, usarlo (es el lugar exacto)
+ * 3. Si hay múltiples, usar nombre como desempate
+ * 4. Expandir radio gradualmente si no hay resultados
  */
 export async function findPlaceByNearbySearch(lat: number, lng: number, name: string): Promise<string | null> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY
@@ -134,73 +140,103 @@ export async function findPlaceByNearbySearch(lat: number, lng: number, name: st
   try {
     console.log('🎯 Buscando lugar cercano con Nearby Search:', { lat, lng, name })
 
-    // Usar Nearby Search con radio pequeño (50m) para mayor precisión
-    const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=50&keyword=${encodeURIComponent(name)}&key=${apiKey}&language=es`
+    // Paso 1: Búsqueda muy precisa (15m) SIN filtro de keyword para encontrar el lugar exacto
+    // Nota: No usar filtro de type para capturar cualquier establecimiento en el radio
+    const preciseUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=15&key=${apiKey}&language=es`
 
-    console.log('🌐 URL de Nearby Search:', searchUrl.replace(apiKey, 'HIDDEN'))
+    console.log('🌐 URL de búsqueda precisa (15m):', preciseUrl.replace(apiKey, 'HIDDEN'))
 
-    const response = await fetch(searchUrl)
-    const data = await response.json()
+    const preciseResponse = await fetch(preciseUrl)
+    const preciseData = await preciseResponse.json()
 
-    console.log('📊 Resultado de Nearby Search:', {
-      status: data.status,
-      resultsCount: data.results?.length,
-      firstResult: data.results?.[0]?.name
+    console.log('📊 Resultado de búsqueda precisa:', {
+      status: preciseData.status,
+      resultsCount: preciseData.results?.length,
+      results: preciseData.results?.map((r: any) => r.name)
     })
 
-    if (data.status === 'OK' && data.results && data.results.length > 0) {
-      // Si hay múltiples resultados, buscar coincidencia de nombre más cercana
-      const exactMatch = data.results.find((result: any) =>
+    if (preciseData.status === 'OK' && preciseData.results && preciseData.results.length > 0) {
+      // Si hay exactamente un resultado en 15m, es el lugar exacto
+      if (preciseData.results.length === 1) {
+        console.log('✅ Único resultado en 15m (lugar exacto):', preciseData.results[0].name, preciseData.results[0].place_id)
+        return preciseData.results[0].place_id
+      }
+
+      // Si hay múltiples en 15m, usar nombre como desempate
+      const exactMatch = preciseData.results.find((result: any) =>
         result.name.toLowerCase().trim() === name.toLowerCase().trim()
       )
 
       if (exactMatch) {
-        console.log('✅ Coincidencia exacta encontrada:', exactMatch.name, exactMatch.place_id)
+        console.log('✅ Coincidencia exacta de nombre en 15m:', exactMatch.name, exactMatch.place_id)
         return exactMatch.place_id
       }
 
-      // Si no hay coincidencia exacta, buscar coincidencia parcial
-      const partialMatch = data.results.find((result: any) =>
+      // Buscar coincidencia parcial
+      const partialMatch = preciseData.results.find((result: any) =>
         result.name.toLowerCase().includes(name.toLowerCase()) ||
         name.toLowerCase().includes(result.name.toLowerCase())
       )
 
       if (partialMatch) {
-        console.log('✅ Coincidencia parcial encontrada:', partialMatch.name, partialMatch.place_id)
+        console.log('✅ Coincidencia parcial en 15m:', partialMatch.name, partialMatch.place_id)
         return partialMatch.place_id
       }
 
-      // Si no hay coincidencia, tomar el primer resultado (más cercano)
-      console.log('⚠️ Sin coincidencia exacta, usando el más cercano:', data.results[0].name)
-      return data.results[0].place_id
+      // Sin coincidencia de nombre, usar el más cercano (primero de la lista)
+      console.log('⚠️ Múltiples resultados sin coincidencia de nombre, usando el primero:', preciseData.results[0].name)
+      return preciseData.results[0].place_id
     }
 
-    // Si no encontramos nada en 50m, intentar con radio más amplio (200m)
-    if (data.status === 'ZERO_RESULTS') {
-      console.log('🔄 Ampliando búsqueda a 200m...')
-      const widerSearchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=200&keyword=${encodeURIComponent(name)}&key=${apiKey}&language=es`
+    // Paso 2: Búsqueda con radio medio (50m) usando keyword de nombre
+    console.log('🔄 Ampliando búsqueda a 50m con keyword...')
+    const mediumUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=50&keyword=${encodeURIComponent(name)}&key=${apiKey}&language=es`
 
-      const widerResponse = await fetch(widerSearchUrl)
-      const widerData = await widerResponse.json()
+    const mediumResponse = await fetch(mediumUrl)
+    const mediumData = await mediumResponse.json()
 
-      console.log('📊 Resultado de búsqueda ampliada:', {
-        status: widerData.status,
-        resultsCount: widerData.results?.length
+    console.log('📊 Resultado de búsqueda media (50m):', {
+      status: mediumData.status,
+      resultsCount: mediumData.results?.length,
+      firstResult: mediumData.results?.[0]?.name
+    })
+
+    if (mediumData.status === 'OK' && mediumData.results && mediumData.results.length > 0) {
+      // Ordenar por similitud de nombre
+      const sortedResults = mediumData.results.sort((a: any, b: any) => {
+        const aExact = a.name.toLowerCase().trim() === name.toLowerCase().trim() ? 0 : 1
+        const bExact = b.name.toLowerCase().trim() === name.toLowerCase().trim() ? 0 : 1
+        return aExact - bExact
       })
 
-      if (widerData.status === 'OK' && widerData.results && widerData.results.length > 0) {
-        // Priorizar coincidencia de nombre
-        const match = widerData.results.find((result: any) =>
+      console.log('✅ Encontrado en 50m:', sortedResults[0].name, sortedResults[0].place_id)
+      return sortedResults[0].place_id
+    }
+
+    // Paso 3: Búsqueda amplia (200m) como último recurso
+    if (mediumData.status === 'ZERO_RESULTS') {
+      console.log('🔄 Ampliando búsqueda a 200m...')
+      const wideUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=200&keyword=${encodeURIComponent(name)}&key=${apiKey}&language=es`
+
+      const wideResponse = await fetch(wideUrl)
+      const wideData = await wideResponse.json()
+
+      console.log('📊 Resultado de búsqueda amplia (200m):', {
+        status: wideData.status,
+        resultsCount: wideData.results?.length
+      })
+
+      if (wideData.status === 'OK' && wideData.results && wideData.results.length > 0) {
+        // Priorizar coincidencia exacta de nombre
+        const match = wideData.results.find((result: any) =>
+          result.name.toLowerCase().trim() === name.toLowerCase().trim()
+        ) || wideData.results.find((result: any) =>
           result.name.toLowerCase().includes(name.toLowerCase()) ||
           name.toLowerCase().includes(result.name.toLowerCase())
-        )
+        ) || wideData.results[0]
 
-        if (match) {
-          console.log('✅ Encontrado en búsqueda ampliada:', match.name, match.place_id)
-          return match.place_id
-        }
-
-        return widerData.results[0].place_id
+        console.log('✅ Encontrado en búsqueda amplia:', match.name, match.place_id)
+        return match.place_id
       }
     }
 
@@ -251,8 +287,45 @@ export async function findPlaceByCoordinatesAndName(url: string): Promise<string
 
     console.log('🔍 Buscando por nombre:', decodedName)
 
-    // Extraer coordenadas del formato @lat,lng
-    const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+    // Extraer coordenadas - PRIORIZAR el formato del lugar específico (!8m2!3d!4d)
+    // sobre las coordenadas del mapa (@lat,lng)
+
+    // Formato 1 (PRIORITARIO): !8m2!3d[lat]!4d[lng] - coordenadas exactas del lugar
+    let coordsMatch = url.match(/!8m2!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)
+
+    // Formato 2: !3d[lat]!4d[lng] (sin el !8m2, pero aún coordenadas del lugar)
+    if (!coordsMatch) {
+      const dataMatch = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)
+      if (dataMatch) {
+        coordsMatch = dataMatch
+      }
+    }
+
+    // Formato 3: @lat,lng (coordenadas del mapa - menos preciso, usar como fallback)
+    if (!coordsMatch) {
+      const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+      if (atMatch) {
+        coordsMatch = atMatch
+        console.log('⚠️ Usando coordenadas del mapa (menos preciso)')
+      }
+    }
+
+    // Formato 4: ll=lat,lng
+    if (!coordsMatch) {
+      const llMatch = url.match(/[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/)
+      if (llMatch) {
+        coordsMatch = llMatch
+      }
+    }
+
+    // Formato 5: center=lat,lng
+    if (!coordsMatch) {
+      const centerMatch = url.match(/[?&]center=(-?\d+\.\d+),(-?\d+\.\d+)/)
+      if (centerMatch) {
+        coordsMatch = centerMatch
+      }
+    }
+
     if (coordsMatch) {
       lat = coordsMatch[1]
       lng = coordsMatch[2]

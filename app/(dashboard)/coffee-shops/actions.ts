@@ -195,36 +195,33 @@ export async function importFromGoogleMaps(googleMapsUrl: string) {
       console.log('🎯 Place ID extraído de URL expandida:', placeId)
     }
 
-    // Si no se encontró Place ID, intentar buscar por nombre y coordenadas
-    if (!placeId) {
-      console.log('⚠️ No se encontró Place ID, intentando búsqueda por nombre y coordenadas...')
-      placeId = await findPlaceByCoordinatesAndName(urlToProcess)
+    // Si es un CID o no se encontró Place ID, SIEMPRE usar búsqueda por coordenadas
+    // Las coordenadas en la URL expandida son la fuente más confiable
+    if (!placeId || placeId.startsWith('CID:')) {
+      console.log('🎯 Usando búsqueda por coordenadas (método más preciso)...')
+      const coordinatesPlaceId = await findPlaceByCoordinatesAndName(urlToProcess)
 
-      if (!placeId) {
+      if (coordinatesPlaceId) {
+        placeId = coordinatesPlaceId
+        console.log('✅ Place ID encontrado por coordenadas:', placeId)
+      } else if (!placeId) {
+        // Solo fallar si no teníamos ningún Place ID
         return {
           success: false,
           error: "No se pudo encontrar la cafetería en Google Maps. Intenta con una URL diferente o verifica que el lugar exista.",
         }
-      }
-    }
+      } else {
+        // Teníamos un CID pero la búsqueda por coordenadas falló, intentar convertir CID
+        console.log('⚠️ Búsqueda por coordenadas falló, intentando convertir CID...')
+        const { findPlaceByCid } = await import('@/lib/google-maps/places-api')
+        const convertedPlaceId = await findPlaceByCid(placeId.replace('CID:', ''))
 
-    // Si es un CID, convertirlo a Place ID
-    if (placeId.startsWith('CID:')) {
-      console.log('🔄 Convirtiendo CID a Place ID...')
-      const { findPlaceByCid } = await import('@/lib/google-maps/places-api')
-      const convertedPlaceId = await findPlaceByCid(placeId.replace('CID:', ''))
-
-      if (!convertedPlaceId) {
-        console.log('⚠️ No se pudo convertir CID, intentando búsqueda por nombre y coordenadas...')
-        placeId = await findPlaceByCoordinatesAndName(urlToProcess)
-
-        if (!placeId) {
+        if (!convertedPlaceId) {
           return {
             success: false,
             error: "No se pudo encontrar la cafetería en Google Maps. Intenta con una URL diferente.",
           }
         }
-      } else {
         placeId = convertedPlaceId
         console.log('✅ CID convertido a Place ID:', placeId)
       }
