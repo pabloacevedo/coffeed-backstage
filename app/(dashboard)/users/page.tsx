@@ -7,44 +7,66 @@ import { UsersList } from "@/components/users/users-list"
 async function getUsers() {
   const supabase = createAdminSupabaseClient()
 
-  // Get all profiles
+  // Get all profiles - explicitly set a high limit to ensure we get all users
   const { data: profiles, error } = await supabase
     .from("profiles")
     .select("*")
     .order("created_at", { ascending: false })
+    .limit(10000) // Set high limit to get all users
 
   if (error || !profiles) {
+    console.error("Error fetching profiles:", error)
     return []
   }
+
+  console.log(`📊 Total perfiles encontrados: ${profiles.length}`)
 
   // Get stats, email, and admin status for each user
   const usersWithStats = await Promise.all(
     profiles.map(async (profile) => {
-      // Get user email and metadata from auth.users
-      const { data: authUser } = await supabase.auth.admin.getUserById(profile.id)
+      try {
+        // Get user email and metadata from auth.users
+        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(profile.id)
 
-      const [{ count: reviewsCount }, { count: bookmarksCount }] = await Promise.all([
-        supabase
-          .from("reviews")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", profile.id)
-          .eq("deleted", false),
-        supabase
-          .from("bookmark_lists")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", profile.id)
-          .eq("deleted", false),
-      ])
+        if (authError) {
+          console.warn(`⚠️ Error obteniendo auth user para ${profile.id}:`, authError)
+        }
 
-      return {
-        ...profile,
-        email: authUser?.user?.email || "",
-        isAdmin: authUser?.user?.user_metadata?.is_admin || false,
-        reviewsCount: reviewsCount || 0,
-        bookmarksCount: bookmarksCount || 0,
+        const [{ count: reviewsCount }, { count: bookmarksCount }] = await Promise.all([
+          supabase
+            .from("reviews")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", profile.id)
+            .eq("deleted", false),
+          supabase
+            .from("bookmark_lists")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", profile.id)
+            .eq("deleted", false),
+        ])
+
+        return {
+          ...profile,
+          email: authUser?.user?.email || "",
+          isAdmin: authUser?.user?.user_metadata?.is_admin || false,
+          reviewsCount: reviewsCount || 0,
+          bookmarksCount: bookmarksCount || 0,
+        }
+      } catch (error) {
+        console.error(`❌ Error procesando usuario ${profile.id}:`, error)
+        // Return user with default values if there's an error
+        return {
+          ...profile,
+          email: "",
+          isAdmin: false,
+          reviewsCount: 0,
+          bookmarksCount: 0,
+        }
       }
     })
   )
+
+  console.log(`✅ Usuarios procesados: ${usersWithStats.length}`)
 
   return usersWithStats
 }
