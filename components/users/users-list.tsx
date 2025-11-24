@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -20,6 +21,7 @@ type User = {
 }
 
 export function UsersList({ users }: { users: User[] }) {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
 
   const filteredUsers = useMemo(() => {
@@ -52,7 +54,8 @@ export function UsersList({ users }: { users: User[] }) {
               filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                  className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/users/${user.id}`)}
                 >
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={user.avatar_url || undefined} />
