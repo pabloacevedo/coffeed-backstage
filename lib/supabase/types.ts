@@ -373,6 +373,39 @@ export interface Database {
         }
         Relationships: []
       }
+      user_activity_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          event_type: string
+          device_info: Json | null
+          ip_address: string | null
+          user_agent: string | null
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          event_type: string
+          device_info?: Json | null
+          ip_address?: string | null
+          user_agent?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          event_type?: string
+          device_info?: Json | null
+          ip_address?: string | null
+          user_agent?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
