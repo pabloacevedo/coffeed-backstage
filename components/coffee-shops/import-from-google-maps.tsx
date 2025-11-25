@@ -113,7 +113,7 @@ export function ImportFromGoogleMaps({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-purple-600" />
+            <MapPin className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             Importar Cafetería desde Google Maps
           </DialogTitle>
           <DialogDescription>
@@ -140,14 +140,14 @@ export function ImportFromGoogleMaps({
             </p>
           </div>
 
-          <div className="rounded-lg bg-purple-50 border border-purple-200 p-4">
+          <div className="rounded-lg bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 p-4">
             <div className="flex gap-3">
-              <Sparkles className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+              <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="text-sm font-medium text-purple-900">
+                <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
                   Importación inteligente
                 </p>
-                <p className="text-xs text-purple-700">
+                <p className="text-xs text-purple-700 dark:text-purple-300">
                   Obtendremos automáticamente: nombre, dirección, teléfono, horarios,
                   coordenadas, sitio web, foto y generaremos una descripción atractiva.
                 </p>

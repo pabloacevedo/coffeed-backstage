@@ -95,8 +95,8 @@ async function DashboardContent() {
       value: stats.coffeeShopsCount,
       description: "Total de cafeterías activas",
       icon: Coffee,
-      color: "text-orange-600",
-      bgColor: "bg-orange-100",
+      color: "text-orange-600 dark:text-orange-400",
+      bgColor: "bg-orange-100 dark:bg-orange-950",
       href: "/coffee-shops",
     },
     {
@@ -104,8 +104,8 @@ async function DashboardContent() {
       value: stats.usersCount,
       description: "Usuarios registrados",
       icon: Users,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-100 dark:bg-blue-950",
       href: "/users",
     },
     {
@@ -113,8 +113,8 @@ async function DashboardContent() {
       value: stats.reviewsCount,
       description: `Promedio: ${stats.averageRating}★`,
       icon: Star,
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-100",
+      color: "text-yellow-600 dark:text-yellow-400",
+      bgColor: "bg-yellow-100 dark:bg-yellow-950",
       href: "/reviews",
     },
     {
@@ -122,8 +122,8 @@ async function DashboardContent() {
       value: stats.reportsCount,
       description: "Requieren atención",
       icon: Flag,
-      color: "text-red-600",
-      bgColor: "bg-red-100",
+      color: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-100 dark:bg-red-950",
       href: "/reports",
     },
     {
@@ -131,8 +131,8 @@ async function DashboardContent() {
       value: stats.viewsCount,
       description: "Analytics de visualizaciones",
       icon: Eye,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
+      color: "text-purple-600 dark:text-purple-400",
+      bgColor: "bg-purple-100 dark:bg-purple-950",
       href: "/analytics",
     },
   ]
@@ -141,10 +141,10 @@ async function DashboardContent() {
     <>
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200 hover:shadow-md transition-all">
+        <Card className="hover:shadow-md transition-all border-purple-200 dark:border-purple-900">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-purple-600" />
+              <MapPin className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               Importar desde Google Maps
             </CardTitle>
             <CardDescription>
@@ -156,10 +156,10 @@ async function DashboardContent() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 border-orange-200 hover:shadow-md transition-all">
+        <Card className="hover:shadow-md transition-all border-orange-200 dark:border-orange-900">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-orange-600" />
+              <Plus className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               Crear Cafetería Manual
             </CardTitle>
             <CardDescription>
@@ -223,8 +223,8 @@ async function DashboardContent() {
                     className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0 transition-colors hover:bg-muted/50 rounded-lg p-2 -mx-2"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
-                        <Coffee className="h-5 w-5 text-orange-600" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950">
+                        <Coffee className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                       </div>
                       <div>
                         <p className="font-medium">{shop.name}</p>
@@ -278,8 +278,8 @@ async function DashboardContent() {
                     className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0 transition-colors hover:bg-muted/50 rounded-lg p-2 -mx-2"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 flex-shrink-0">
-                        <Flag className="h-5 w-5 text-red-600" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-950 flex-shrink-0">
+                        <Flag className="h-5 w-5 text-red-600 dark:text-red-400" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium truncate">{report.coffee_shops?.name || "Cafetería"}</p>
@@ -301,25 +301,6 @@ async function DashboardContent() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Welcome Message */}
-      <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-purple-600" />
-            Bienvenido a Coffeed Backstage
-          </CardTitle>
-          <CardDescription>
-            Panel de administración para gestionar tu plataforma de cafeterías
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Desde aquí puedes administrar cafeterías, usuarios, moderar reseñas y reportes,
-            además de visualizar analíticas detalladas del rendimiento de la plataforma.
-          </p>
-        </CardContent>
-      </Card>
     </>
   )
 }
