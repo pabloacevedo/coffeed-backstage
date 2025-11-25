@@ -54,13 +54,14 @@ async function getAnalytics() {
 
   const searchCounts: Record<string, { count: number; totalResults: number }> = {}
   allSearches?.forEach((log: any) => {
-    const query = log.metadata?.search_query
+    const metadata = log.metadata as any
+    const query = metadata?.search_query
     if (query) {
       if (!searchCounts[query]) {
         searchCounts[query] = { count: 0, totalResults: 0 }
       }
       searchCounts[query].count++
-      searchCounts[query].totalResults += log.metadata?.results_count || 0
+      searchCounts[query].totalResults += metadata?.results_count || 0
     }
   })
 
@@ -81,8 +82,9 @@ async function getAnalytics() {
 
   const deviceCounts: Record<string, number> = {}
   allDevices?.forEach((log: any) => {
-    const os = log.device_info?.osName || "Desconocido"
-    const brand = log.device_info?.brand || "Desconocido"
+    const deviceInfo = log.device_info as any
+    const os = deviceInfo?.osName || "Desconocido"
+    const brand = deviceInfo?.brand || "Desconocido"
     const key = `${os} - ${brand}`
     deviceCounts[key] = (deviceCounts[key] || 0) + 1
   })
@@ -119,7 +121,7 @@ async function getAnalytics() {
     sessionData && sessionData.length > 0
       ? Math.round(
           sessionData.reduce(
-            (acc, log) => acc + Number(log.metadata?.session_duration_seconds || 0),
+            (acc, log) => acc + Number((log.metadata as any)?.session_duration_seconds || 0),
             0
           ) / sessionData.length
         )
