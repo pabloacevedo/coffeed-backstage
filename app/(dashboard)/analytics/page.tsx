@@ -201,47 +201,42 @@ async function getAnalytics() {
   // Get most shared coffee shops
   const { data: sharesData } = await supabase
     .from("user_activity_logs")
-    .select(`
-      metadata,
-      shop_id:metadata->>'shop_id'
-    `)
+    .select("*")
     .eq("event_type", "share_shop")
-    .limit(1000)
 
-  const sharesByShop: Record<string, { id: string; name: string; image: string | null; shares: number }> = {}
-
-  for (const log of sharesData || []) {
+  // Group by shop_id and count shares
+  const sharesByShopId: Record<string, number> = {}
+  sharesData?.forEach((log) => {
     const metadata = log.metadata as any
     const shopId = metadata?.shop_id
-
     if (shopId) {
-      if (!sharesByShop[shopId]) {
-        // Get coffee shop details
-        const { data: shopData } = await supabase
-          .from("coffee_shops")
-          .select("id, name, image")
-          .eq("id", shopId)
-          .single()
-
-        if (shopData) {
-          sharesByShop[shopId] = {
-            id: shopData.id,
-            name: shopData.name,
-            image: shopData.image,
-            shares: 0,
-          }
-        }
-      }
-
-      if (sharesByShop[shopId]) {
-        sharesByShop[shopId].shares++
-      }
+      sharesByShopId[shopId] = (sharesByShopId[shopId] || 0) + 1
     }
-  }
+  })
 
-  const mostShared = Object.values(sharesByShop)
-    .sort((a, b) => b.shares - a.shares)
+  // Get top 10 shop IDs
+  const topShopIds = Object.entries(sharesByShopId)
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 10)
+    .map(([id]) => id)
+
+  // Fetch coffee shop details for top 10 (only if there are shares)
+  let mostShared: Array<{ id: string; name: string; image: string | null; shares: number }> = []
+  if (topShopIds.length > 0) {
+    const { data: shopsData } = await supabase
+      .from("coffee_shops")
+      .select("id, name, image")
+      .in("id", topShopIds)
+      .eq("deleted", false)
+
+    // Combine data
+    mostShared = shopsData?.map(shop => ({
+      id: shop.id,
+      name: shop.name,
+      image: shop.image,
+      shares: sharesByShopId[shop.id]
+    })).sort((a, b) => b.shares - a.shares) || []
+  }
 
   return {
     uniqueActiveUsersToday: uniqueActiveUsersToday || 0,
