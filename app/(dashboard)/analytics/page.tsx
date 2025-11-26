@@ -14,6 +14,7 @@ import {
   Eye,
   Star,
   AlertCircle,
+  Share2,
 } from "lucide-react"
 
 async function getAnalytics() {
@@ -120,11 +121,11 @@ async function getAnalytics() {
   const avgSessionDuration =
     sessionData && sessionData.length > 0
       ? Math.round(
-          sessionData.reduce(
-            (acc, log) => acc + Number((log.metadata as any)?.session_duration_seconds || 0),
-            0
-          ) / sessionData.length
-        )
+        sessionData.reduce(
+          (acc, log) => acc + Number((log.metadata as any)?.session_duration_seconds || 0),
+          0
+        ) / sessionData.length
+      )
       : 0
 
   // Actividad de usuarios últimos 7 días
@@ -197,6 +198,51 @@ async function getAnalytics() {
     .sort((a: any, b: any) => b.views - a.views)
     .slice(0, 10)
 
+  // Get most shared coffee shops
+  const { data: sharesData } = await supabase
+    .from("user_activity_logs")
+    .select(`
+      metadata,
+      shop_id:metadata->>'shop_id'
+    `)
+    .eq("event_type", "share_shop")
+    .limit(1000)
+
+  const sharesByShop: Record<string, { id: string; name: string; image: string | null; shares: number }> = {}
+
+  for (const log of sharesData || []) {
+    const metadata = log.metadata as any
+    const shopId = metadata?.shop_id
+
+    if (shopId) {
+      if (!sharesByShop[shopId]) {
+        // Get coffee shop details
+        const { data: shopData } = await supabase
+          .from("coffee_shops")
+          .select("id, name, image")
+          .eq("id", shopId)
+          .single()
+
+        if (shopData) {
+          sharesByShop[shopId] = {
+            id: shopData.id,
+            name: shopData.name,
+            image: shopData.image,
+            shares: 0,
+          }
+        }
+      }
+
+      if (sharesByShop[shopId]) {
+        sharesByShop[shopId].shares++
+      }
+    }
+  }
+
+  const mostShared = Object.values(sharesByShop)
+    .sort((a, b) => b.shares - a.shares)
+    .slice(0, 10)
+
   return {
     uniqueActiveUsersToday: uniqueActiveUsersToday || 0,
     totalSearches: totalSearches || 0,
@@ -208,6 +254,7 @@ async function getAnalytics() {
     dailyActivity,
     topRated: shopsWithRatings,
     mostViewed,
+    mostShared,
   }
 }
 
@@ -503,6 +550,50 @@ async function AnalyticsContent() {
                     <div className="flex items-center gap-1">
                       <Eye className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                       <span className="font-bold">{shop.views}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-sm text-muted-foreground py-4">
+                  No hay datos disponibles
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Most Shared Coffee Shops */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+              Cafeterías más compartidas
+            </CardTitle>
+            <CardDescription>Top 10 cafeterías más compartidas por los usuarios</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.mostShared.length > 0 ? (
+                stats.mostShared.map((shop: any, index) => (
+                  <div key={shop.id} className="flex items-center gap-4">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-950 font-bold text-green-600 dark:text-green-400">
+                      {index + 1}
+                    </div>
+                    {shop.image ? (
+                      <img
+                        src={shop.image}
+                        alt={shop.name}
+                        className="h-10 w-10 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-lg bg-muted" />
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium">{shop.name}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Share2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <span className="font-bold">{shop.shares}</span>
                     </div>
                   </div>
                 ))
