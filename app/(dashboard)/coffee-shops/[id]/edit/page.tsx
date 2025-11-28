@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CoffeeShopForm } from "@/components/coffee-shops/coffee-shop-form"
+import { FeaturesManager } from "@/components/coffee-shops/features-manager"
 import { Eye } from "lucide-react"
 import Link from "next/link"
 
@@ -16,7 +17,8 @@ async function getCoffeeShop(id: string) {
       *,
       addresses(*),
       schedules(*),
-      contacts(*)
+      contacts(*),
+      coffee_shop_features(*)
     `)
     .eq("id", id)
     .single()
@@ -68,6 +70,11 @@ export default async function EditCoffeeShopPage({
           <CoffeeShopForm shop={shop} />
         </CardContent>
       </Card>
+
+      <FeaturesManager
+        coffeeShopId={shop.id}
+        initialFeatures={shop.coffee_shop_features || []}
+      />
     </div>
   )
 }

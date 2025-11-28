@@ -406,6 +406,146 @@ export interface Database {
         }
         Relationships: []
       }
+      feature_categories: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          icon: string | null
+          description: string | null
+          display_order: number
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          icon?: string | null
+          description?: string | null
+          display_order?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          icon?: string | null
+          description?: string | null
+          display_order?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      features: {
+        Row: {
+          id: string
+          category_id: string | null
+          name: string
+          slug: string
+          description: string | null
+          icon: string | null
+          is_filterable: boolean
+          display_order: number
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          category_id?: string | null
+          name: string
+          slug: string
+          description?: string | null
+          icon?: string | null
+          is_filterable?: boolean
+          display_order?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          category_id?: string | null
+          name?: string
+          slug?: string
+          description?: string | null
+          icon?: string | null
+          is_filterable?: boolean
+          display_order?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "features_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "feature_categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      coffee_shop_features: {
+        Row: {
+          id: string
+          coffee_shop_id: string
+          feature_id: string
+          verified: boolean
+          verified_by: string | null
+          verified_at: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          coffee_shop_id: string
+          feature_id: string
+          verified?: boolean
+          verified_by?: string | null
+          verified_at?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          coffee_shop_id?: string
+          feature_id?: string
+          verified?: boolean
+          verified_by?: string | null
+          verified_at?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coffee_shop_features_coffee_shop_id_fkey"
+            columns: ["coffee_shop_id"]
+            referencedRelation: "coffee_shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coffee_shop_features_feature_id_fkey"
+            columns: ["feature_id"]
+            referencedRelation: "features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coffee_shop_features_verified_by_fkey"
+            columns: ["verified_by"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

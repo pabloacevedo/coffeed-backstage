@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   Clock,
+  Sparkles,
 } from "lucide-react"
 
 import {
@@ -56,6 +57,11 @@ const navItems = [
     title: "Pendientes",
     icon: Clock,
     url: "/pending-shops",
+  },
+  {
+    title: "Features",
+    icon: Sparkles,
+    url: "/features",
   },
   {
     title: "Usuarios",
