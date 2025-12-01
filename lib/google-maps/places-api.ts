@@ -466,3 +466,23 @@ function formatTime(time: string): string {
   }
   return time
 }
+
+/**
+ * Detecta si una URL es de Instagram
+ */
+export function isInstagramUrl(url: string): boolean {
+  const instagramPattern = /(?:https?:\/\/)?(?:www\.)?instagram\.com\//i
+  return instagramPattern.test(url)
+}
+
+/**
+ * Normaliza una URL de Instagram al formato estándar
+ */
+export function normalizeInstagramUrl(url: string): string {
+  const instagramPattern = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9._]+)\/?/i
+  const match = url.match(instagramPattern)
+  if (match) {
+    return `https://instagram.com/${match[1]}`
+  }
+  return url
+}

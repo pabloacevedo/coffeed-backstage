@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/auth/admin"
 import { extractPlaceIdFromUrl, expandShortUrl } from "@/lib/google-maps/extract-place-id"
-import { getPlaceDetails, parseAddress, parseOpeningHours, getPhotoUrl, findPlaceByCoordinatesAndName } from "@/lib/google-maps/places-api"
+import { getPlaceDetails, parseAddress, parseOpeningHours, getPhotoUrl, findPlaceByCoordinatesAndName, isInstagramUrl, normalizeInstagramUrl } from "@/lib/google-maps/places-api"
 
 /**
  * Normaliza el formato del teléfono a +56912345678 (sin espacios ni caracteres especiales)
@@ -253,13 +253,35 @@ export async function importFromGoogleMaps(googleMapsUrl: string) {
     // Paso 6: Parsear horarios
     const schedule = parseOpeningHours(placeDetails.opening_hours)
 
-    // Paso 7: Preparar datos para retornar
+    // Paso 7: Detectar y clasificar Instagram
+    const contacts: Array<{ type: string; value: string }> = []
+    let websiteUrl = null
+    let instagramUrl = null
+
+    if (placeDetails.website) {
+      if (isInstagramUrl(placeDetails.website)) {
+        // Si el website es Instagram, guardarlo en contacts con tipo "instagram"
+        const normalizedInstagram = normalizeInstagramUrl(placeDetails.website)
+        contacts.push({
+          type: "instagram",
+          value: normalizedInstagram
+        })
+        instagramUrl = normalizedInstagram
+      } else {
+        // Si no es Instagram, es un website normal
+        websiteUrl = placeDetails.website
+      }
+    }
+
+    // Paso 8: Preparar datos para retornar
     const importedData = {
       name: placeDetails.name,
       description: description,
       phone: normalizePhoneNumber(placeDetails.formatted_phone_number),
-      website: placeDetails.website || null,
+      website: websiteUrl,
+      instagramUrl: instagramUrl,
       googleMapsUrl: placeDetails.url || googleMapsUrl,
+      contacts: contacts,
       address: {
         street: address.street,
         city: address.city,

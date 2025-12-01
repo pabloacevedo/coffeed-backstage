@@ -12,7 +12,7 @@ interface ActivityLog {
   created_at: string
   metadata: any
   device_info: any
-  user_id: string
+  user_id: string | null
 }
 
 interface RecentActivitiesCardProps {

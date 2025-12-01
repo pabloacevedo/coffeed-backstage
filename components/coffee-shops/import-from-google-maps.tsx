@@ -22,7 +22,12 @@ interface ImportedData {
   description: string | null
   phone: string | null
   website: string | null
+  instagramUrl: string | null
   googleMapsUrl: string | null
+  contacts: Array<{
+    type: string
+    value: string
+  }>
   address: {
     street: string
     city: string
@@ -149,7 +154,7 @@ export function ImportFromGoogleMaps({
                 </p>
                 <p className="text-xs text-purple-700 dark:text-purple-300">
                   Obtendremos automáticamente: nombre, dirección, teléfono, horarios,
-                  coordenadas, sitio web, foto y generaremos una descripción atractiva.
+                  coordenadas, sitio web, Instagram (si está disponible) y foto.
                 </p>
               </div>
             </div>

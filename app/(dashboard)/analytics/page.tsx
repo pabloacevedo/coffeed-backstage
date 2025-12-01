@@ -16,6 +16,55 @@ import { TopSearchesCard } from "@/components/analytics/top-searches-card"
 import { DailyActivityCard } from "@/components/analytics/daily-activity-card"
 import { TopRatedCard, MostViewedCard, MostSharedCard } from "@/components/analytics/coffee-shops-cards"
 
+interface TopRatedShop {
+  id: string
+  name: string
+  image: string | null
+  avgRating: number
+  reviewCount: number
+}
+
+interface MostViewedShop {
+  id: string
+  name: string
+  image: string | null
+  views: number
+}
+
+interface MostSharedShop {
+  id: string
+  name: string
+  image: string | null
+  shares: number
+}
+
+interface DeviceStat {
+  model: string
+  count: number
+  lastActivity: string
+}
+
+interface SearchStat {
+  query: string
+  search_count: number
+  avg_results: string
+}
+
+interface DailyActivity {
+  date: string
+  unique_users: number
+  total_opens: number
+}
+
+interface ActivityLog {
+  id: string
+  event_type: string
+  created_at: string
+  metadata: any
+  device_info: any
+  user_id: string | null
+}
+
 async function getAnalytics() {
   const supabase = createAdminSupabaseClient()
 
@@ -183,14 +232,16 @@ async function getAnalytics() {
     .eq("deleted", false)
     .eq("active", true)
 
-  const shopsWithRatings = (topRated as any[])
+  const shopsWithRatings: TopRatedShop[] = (topRated as any[])
     ?.map((shop) => {
       const ratings = shop.reviews?.map((r: any) => r.rating) || []
       const avgRating = ratings.length > 0
         ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length
         : 0
       return {
-        ...shop,
+        id: shop.id,
+        name: shop.name,
+        image: shop.image,
         avgRating: Number(avgRating.toFixed(2)),
         reviewCount: ratings.length,
       }
@@ -217,9 +268,9 @@ async function getAnalytics() {
     return acc
   }, {})
 
-  const mostViewed = Object.values(viewsByShop || {})
+  const mostViewed: MostViewedShop[] = Object.values(viewsByShop || {})
     .sort((a: any, b: any) => b.views - a.views)
-    .slice(0, 10)
+    .slice(0, 10) as MostViewedShop[]
 
   // Get most shared coffee shops
   const { data: sharesData } = await supabase
@@ -251,7 +302,7 @@ async function getAnalytics() {
     .map(([id]) => id)
 
   // Fetch coffee shop details for top 10 (only if there are shares)
-  let mostShared: Array<{ id: string; name: string; image: string | null; shares: number }> = []
+  let mostShared: MostSharedShop[] = []
   if (topShopIds.length > 0) {
     const { data: shopsData } = await supabase
       .from("coffee_shops")
