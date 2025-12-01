@@ -1,24 +1,23 @@
 import { Suspense } from "react"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { createAdminSupabaseClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Users,
   Search,
-  Smartphone,
   Clock,
-  TrendingUp,
-  Activity,
   UserPlus,
   BarChart3,
-  Eye,
-  Star,
   AlertCircle,
-  Share2,
 } from "lucide-react"
+import { DeviceStatsCard } from "@/components/analytics/device-stats-card"
+import { RecentActivitiesCard } from "@/components/analytics/recent-activities-card"
+import { TopSearchesCard } from "@/components/analytics/top-searches-card"
+import { DailyActivityCard } from "@/components/analytics/daily-activity-card"
+import { TopRatedCard, MostViewedCard, MostSharedCard } from "@/components/analytics/coffee-shops-cards"
 
 async function getAnalytics() {
-  const supabase = await createServerSupabaseClient()
+  const supabase = createAdminSupabaseClient()
 
   // Usuarios activos hoy
   const today = new Date().toISOString().split("T")[0]
@@ -73,30 +72,54 @@ async function getAnalytics() {
       avg_results: (data.totalResults / data.count).toFixed(1),
     }))
     .sort((a, b) => b.search_count - a.search_count)
-    .slice(0, 5)
+    .slice(0, 10)
 
-  // Estadísticas de dispositivos
-  const { data: allDevices } = await supabase
-    .from("user_activity_logs")
-    .select("device_info")
-    .limit(1000)
+  // Estadísticas de dispositivos - obtener TODOS los registros sin límite con fecha de actividad
+  let allDevices: any[] = []
+  let from = 0
+  const pageSize = 1000
+  let hasMore = true
 
-  const deviceCounts: Record<string, number> = {}
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from("user_activity_logs")
+      .select("device_info, created_at")
+      .range(from, from + pageSize - 1)
+
+    if (error || !data || data.length === 0) {
+      hasMore = false
+    } else {
+      allDevices = [...allDevices, ...data]
+      from += pageSize
+      hasMore = data.length === pageSize
+    }
+  }
+
+  const deviceData: Record<string, { count: number; lastActivity: string }> = {}
   allDevices?.forEach((log: any) => {
     const deviceInfo = log.device_info as any
-    const os = deviceInfo?.osName || "Desconocido"
-    const brand = deviceInfo?.brand || "Desconocido"
-    const key = `${os} - ${brand}`
-    deviceCounts[key] = (deviceCounts[key] || 0) + 1
+    // Usar modelName o modelId como identificador principal, igual que tu consulta SQL
+    const modelIdentifier = deviceInfo?.modelName || deviceInfo?.modelId || "Desconocido"
+
+    if (!deviceData[modelIdentifier]) {
+      deviceData[modelIdentifier] = { count: 0, lastActivity: log.created_at }
+    }
+
+    deviceData[modelIdentifier].count++
+
+    // Actualizar última actividad si este registro es más reciente
+    if (new Date(log.created_at) > new Date(deviceData[modelIdentifier].lastActivity)) {
+      deviceData[modelIdentifier].lastActivity = log.created_at
+    }
   })
 
-  const deviceStats = Object.entries(deviceCounts)
-    .map(([key, count]) => {
-      const [os, brand] = key.split(" - ")
-      return { os, brand, count }
-    })
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
+  const deviceStats = Object.entries(deviceData)
+    .map(([model, data]) => ({
+      model,
+      count: data.count,
+      lastActivity: data.lastActivity
+    }))
+    .sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime())
 
   // Usuarios nuevos últimos 7 días
   const sevenDaysAgo = new Date()
@@ -214,6 +237,13 @@ async function getAnalytics() {
     }
   })
 
+  // Get recent activities (últimas 10)
+  const { data: recentActivities } = await supabase
+    .from("user_activity_logs")
+    .select("id, event_type, created_at, metadata, device_info, user_id")
+    .order("created_at", { ascending: false })
+    .limit(10)
+
   // Get top 10 shop IDs
   const topShopIds = Object.entries(sharesByShopId)
     .sort(([, a], [, b]) => b - a)
@@ -250,6 +280,7 @@ async function getAnalytics() {
     topRated: shopsWithRatings,
     mostViewed,
     mostShared,
+    recentActivities: recentActivities || [],
   }
 }
 
@@ -329,277 +360,27 @@ async function AnalyticsContent() {
       {/* Details Section */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Top Searches */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              Búsquedas Más Comunes
-            </CardTitle>
-            <CardDescription>Términos más buscados por los usuarios</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {stats.topSearches.length > 0 ? (
-                stats.topSearches.map((search: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-950">
-                        <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{search.query || "Sin texto"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Promedio: {search.avg_results} resultados
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{search.search_count}</p>
-                      <p className="text-xs text-muted-foreground">búsquedas</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-4">
-                  No hay datos de búsquedas aún
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <TopSearchesCard searches={stats.topSearches} />
 
         {/* Device Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              Estadísticas de Dispositivos
-            </CardTitle>
-            <CardDescription>Distribución por sistema operativo y marca</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {stats.deviceStats.length > 0 ? (
-                stats.deviceStats.map((device: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950">
-                        <Smartphone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {device.os || "Desconocido"} - {device.brand || "Desconocido"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{device.count}</p>
-                      <p className="text-xs text-muted-foreground">eventos</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-4">
-                  No hay datos de dispositivos aún
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <DeviceStatsCard deviceStats={stats.deviceStats} />
 
         {/* Daily Activity */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />
-              Usuarios Activos - Últimos 7 Días
-            </CardTitle>
-            <CardDescription>Usuarios únicos que abrieron la app cada día</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {stats.dailyActivity.length > 0 ? (
-                stats.dailyActivity.map((day: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 dark:bg-green-950">
-                        <BarChart3 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {new Date(day.date).toLocaleDateString("es-ES", {
-                            weekday: "long",
-                            day: "numeric",
-                            month: "long",
-                          })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {day.total_opens} aperturas totales
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {day.unique_users}
-                      </p>
-                      <p className="text-xs text-muted-foreground">usuarios únicos</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-4">
-                  No hay datos de actividad aún
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <DailyActivityCard activities={stats.dailyActivity} />
 
         {/* Top Rated Coffee Shops */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              Cafeterías mejor calificadas
-            </CardTitle>
-            <CardDescription>Top 10 cafeterías con mejor calificación promedio</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.topRated.length > 0 ? (
-                stats.topRated.map((shop, index) => (
-                  <div key={shop.id} className="flex items-center gap-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
-                      {index + 1}
-                    </div>
-                    {shop.image ? (
-                      <img
-                        src={shop.image}
-                        alt={shop.name}
-                        className="h-10 w-10 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-lg bg-muted" />
-                    )}
-                    <div className="flex-1">
-                      <p className="font-medium">{shop.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {shop.reviewCount} reseñas
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-bold">{shop.avgRating}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-4">
-                  No hay datos disponibles
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <TopRatedCard shops={stats.topRated} />
 
         {/* Most Viewed Coffee Shops */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              Cafeterías más vistas
-            </CardTitle>
-            <CardDescription>Top 10 cafeterías con más visualizaciones</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.mostViewed.length > 0 ? (
-                stats.mostViewed.map((shop: any, index) => (
-                  <div key={shop.id} className="flex items-center gap-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 font-bold text-purple-600 dark:text-purple-400">
-                      {index + 1}
-                    </div>
-                    {shop.image ? (
-                      <img
-                        src={shop.image}
-                        alt={shop.name}
-                        className="h-10 w-10 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-lg bg-muted" />
-                    )}
-                    <div className="flex-1">
-                      <p className="font-medium">{shop.name}</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                      <span className="font-bold">{shop.views}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-4">
-                  No hay datos disponibles
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <MostViewedCard shops={stats.mostViewed} />
 
         {/* Most Shared Coffee Shops */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Share2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-              Cafeterías más compartidas
-            </CardTitle>
-            <CardDescription>Top 10 cafeterías más compartidas por los usuarios</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.mostShared.length > 0 ? (
-                stats.mostShared.map((shop: any, index) => (
-                  <div key={shop.id} className="flex items-center gap-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-950 font-bold text-green-600 dark:text-green-400">
-                      {index + 1}
-                    </div>
-                    {shop.image ? (
-                      <img
-                        src={shop.image}
-                        alt={shop.name}
-                        className="h-10 w-10 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-lg bg-muted" />
-                    )}
-                    <div className="flex-1">
-                      <p className="font-medium">{shop.name}</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Share2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      <span className="font-bold">{shop.shares}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-4">
-                  No hay datos disponibles
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <MostSharedCard shops={stats.mostShared} />
+      </div>
+
+      {/* Recent Activities Section */}
+      <div className="grid gap-4">
+        <RecentActivitiesCard activities={stats.recentActivities} />
       </div>
     </>
   )

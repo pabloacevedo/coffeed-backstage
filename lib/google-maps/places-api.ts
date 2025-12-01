@@ -406,7 +406,7 @@ export function parseAddress(formattedAddress: string) {
 /**
  * Convierte los horarios de Google Places al formato de nuestra base de datos
  * Google usa: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
- * Nosotros usamos: 0=Lunes, 1=Martes, 2=Miércoles, 3=Jueves, 4=Viernes, 5=Sábado, 6=Domingo
+ * Nosotros usamos: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
  */
 export function parseOpeningHours(openingHours?: PlaceDetails['opening_hours']) {
   if (!openingHours?.periods) {
@@ -415,17 +415,26 @@ export function parseOpeningHours(openingHours?: PlaceDetails['opening_hours']) 
 
   const schedule = []
 
-  // Convertir índices de Google (0=Dom) a nuestros índices (0=Lun)
-  const convertGoogleDayToOurDay = (googleDay: number) => {
-    // Google: 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
-    // Nuestro: 0=Lun, 1=Mar, 2=Mié, 3=Jue, 4=Vie, 5=Sáb, 6=Dom
-    return googleDay === 0 ? 6 : googleDay - 1
+  // Mapeo de días de Google a nuestro sistema
+  // Google: 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+  // Nuestro: 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb, 0=Dom
+  const googleToOurDay: Record<number, number> = {
+    0: 0, // Domingo -> 0
+    1: 1, // Lunes -> 1
+    2: 2, // Martes -> 2
+    3: 3, // Miércoles -> 3
+    4: 4, // Jueves -> 4
+    5: 5, // Viernes -> 5
+    6: 6, // Sábado -> 6
   }
 
-  // Recorrer nuestros días (0=Lunes hasta 6=Domingo)
-  for (let ourDay = 0; ourDay < 7; ourDay++) {
-    // Convertir a día de Google para buscar
-    const googleDay = ourDay === 6 ? 0 : ourDay + 1
+  // Recorrer todos los días de la semana en nuestro formato (1-6, 0)
+  const ourDays = [1, 2, 3, 4, 5, 6, 0] // Lunes a Domingo
+  const googleDays = [1, 2, 3, 4, 5, 6, 0] // Lunes a Domingo en formato Google
+
+  for (let i = 0; i < 7; i++) {
+    const ourDay = ourDays[i]
+    const googleDay = googleDays[i]
     const period = openingHours.periods.find(p => p.open.day === googleDay)
 
     if (period) {

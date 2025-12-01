@@ -12,6 +12,7 @@ import { ArrowLeft, Save, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { ImportFromGoogleMaps } from "@/components/coffee-shops/import-from-google-maps"
+import { ScheduleEditor, type ScheduleDay } from "@/components/coffee-shops/schedule-editor"
 import { createClient } from "@/lib/supabase/client"
 
 interface FormData {
@@ -26,17 +27,10 @@ interface FormData {
   latitude: string
   longitude: string
   imageUrl: string
-  schedule: Array<{
-    dayOfWeek: number
-    openTime: string
-    closeTime: string
-    isClosed: boolean
-  }>
+  schedule: ScheduleDay[]
 }
 
-const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-
-const defaultSchedule = Array.from({ length: 7 }, (_, i) => ({
+const defaultSchedule: ScheduleDay[] = Array.from({ length: 7 }, (_, i) => ({
   dayOfWeek: i,
   openTime: '09:00',
   closeTime: '18:00',
@@ -203,13 +197,8 @@ export default function NewCoffeeShopPage() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const updateSchedule = (dayIndex: number, field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      schedule: prev.schedule.map((s, i) =>
-        i === dayIndex ? { ...s, [field]: value } : s
-      ),
-    }))
+  const updateSchedule = (schedules: ScheduleDay[]) => {
+    setFormData((prev) => ({ ...prev, schedule: schedules }))
   }
 
   return (
@@ -383,40 +372,12 @@ export default function NewCoffeeShopPage() {
             <CardTitle>Horarios</CardTitle>
             <CardDescription>Configura los horarios de atención</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {formData.schedule.map((schedule, index) => (
-              <div key={index} className="space-y-2 md:space-y-0 md:flex md:items-center md:gap-4 pb-3 border-b last:border-b-0">
-                <div className="font-medium md:w-24">{daysOfWeek[schedule.dayOfWeek]}</div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
-                  <div className="flex items-center gap-2 flex-1">
-                    <Input
-                      type="time"
-                      value={schedule.openTime}
-                      onChange={(e) => updateSchedule(index, 'openTime', e.target.value)}
-                      disabled={schedule.isClosed}
-                      className="flex-1 sm:w-auto"
-                    />
-                    <span className="text-sm text-muted-foreground">a</span>
-                    <Input
-                      type="time"
-                      value={schedule.closeTime}
-                      onChange={(e) => updateSchedule(index, 'closeTime', e.target.value)}
-                      disabled={schedule.isClosed}
-                      className="flex-1 sm:w-auto"
-                    />
-                  </div>
-                  <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={schedule.isClosed}
-                      onChange={(e) => updateSchedule(index, 'isClosed', e.target.checked)}
-                      className="rounded"
-                    />
-                    <span className="text-sm">Cerrado</span>
-                  </label>
-                </div>
-              </div>
-            ))}
+          <CardContent>
+            <ScheduleEditor
+              schedules={formData.schedule}
+              onChange={updateSchedule}
+              disabled={loading}
+            />
           </CardContent>
         </Card>
 

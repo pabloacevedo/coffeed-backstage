@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MapPin, Phone, Instagram, Globe, Clock, Star, Edit, Flag } from "lucide-react"
+import { MapPin, Phone, Instagram, Globe, Clock, Star, Edit, Flag, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { ToggleActiveButton } from "@/components/coffee-shops/toggle-active-button"
 import { ScheduleManager } from "@/components/coffee-shops/schedule-manager"
@@ -76,6 +76,12 @@ export default async function CoffeeShopDetailPage({
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <ToggleActiveButton shopId={shop.id} currentStatus={shop.active} />
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Link href={`https://coffeed.app/shop/${shop.id}`} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Ver perfil público
+            </Link>
+          </Button>
           <Button asChild className="w-full sm:w-auto">
             <Link href={`/coffee-shops/${shop.id}/edit`}>
               <Edit className="mr-2 h-4 w-4" />
