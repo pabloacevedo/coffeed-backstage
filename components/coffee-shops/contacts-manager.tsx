@@ -23,11 +23,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Phone, Instagram, Globe, Plus, Save, Trash2 } from "lucide-react"
+import { Phone, Instagram, Globe, Plus, Save, Trash2, MessageCircle } from "lucide-react"
 
 interface Contact {
   id?: string
-  type: "phone" | "instagram" | "web"
+  type: "phone" | "instagram" | "web" | "whatsapp"
   value: string
 }
 
@@ -38,6 +38,7 @@ interface ContactsManagerProps {
 
 const contactTypes = [
   { value: "phone", label: "Teléfono", icon: Phone },
+  { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
   { value: "instagram", label: "Instagram", icon: Instagram },
   { value: "web", label: "Sitio Web", icon: Globe },
 ]
@@ -68,7 +69,7 @@ export function ContactsManager({ coffeeShopId, existingContacts }: ContactsMana
 
   const handleTypeChange = (index: number, type: string) => {
     const newContacts = [...contacts]
-    newContacts[index].type = type as "phone" | "instagram" | "web"
+    newContacts[index].type = type as "phone" | "instagram" | "web" | "whatsapp"
     setContacts(newContacts)
   }
 
@@ -173,6 +174,8 @@ export function ContactsManager({ coffeeShopId, existingContacts }: ContactsMana
                   onChange={(e) => handleValueChange(index, e.target.value)}
                   placeholder={
                     contact.type === "phone"
+                      ? "+56 9 1234 5678"
+                      : contact.type === "whatsapp"
                       ? "+56 9 1234 5678"
                       : contact.type === "instagram"
                       ? "@cafeteria"

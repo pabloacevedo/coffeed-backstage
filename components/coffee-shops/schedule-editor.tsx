@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label"
 import { Copy } from "lucide-react"
 import { toast } from "sonner"
 
-const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+// Usar el mismo orden que JavaScript Date.getDay(): 0=Domingo, 1=Lunes, ..., 6=Sábado
+const daysOfWeek = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 
 export interface ScheduleDay {
   dayOfWeek: number
@@ -30,16 +31,16 @@ export function ScheduleEditor({ schedules, onChange, disabled = false }: Schedu
   }
 
   const copyFromPreviousDay = (dayIndex: number) => {
-    // Para Lunes (1), copiar de Domingo (0)
-    // Para otros días, copiar del día anterior
+    // dayIndex coincide con day_of_week: 0=Domingo, 1=Lunes, etc.
+    // Copiar del día anterior en orden de semana (Lun-Dom)
     let previousDayIndex: number
 
-    if (dayIndex === 1) {
-      // Lunes copia de Domingo
-      previousDayIndex = 0
-    } else if (dayIndex === 0) {
+    if (dayIndex === 0) {
       // Domingo copia de Sábado
       previousDayIndex = 6
+    } else if (dayIndex === 1) {
+      // Lunes copia de Domingo
+      previousDayIndex = 0
     } else {
       // Otros días copian del anterior
       previousDayIndex = dayIndex - 1
