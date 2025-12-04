@@ -20,6 +20,7 @@ interface FormData {
   description: string
   phone: string
   website: string
+  instagram: string
   googleMapsUrl: string
   street: string
   city: string
@@ -45,6 +46,7 @@ export default function NewCoffeeShopPage() {
     description: '',
     phone: '',
     website: '',
+    instagram: '',
     googleMapsUrl: '',
     street: '',
     city: '',
@@ -77,6 +79,7 @@ export default function NewCoffeeShopPage() {
       description: importedData.description || '',
       phone: importedData.phone || '',
       website: importedData.website || '',
+      instagram: importedData.instagramUrl || '',
       googleMapsUrl: importedData.googleMapsUrl || '',
       street: importedData.address?.street || '',
       city: importedData.address?.city || '',
@@ -146,6 +149,14 @@ export default function NewCoffeeShopPage() {
           coffee_shop_id: coffeeShop.id,
           type: 'web',
           value: formData.website,
+        })
+      }
+
+      if (formData.instagram) {
+        contactsToInsert.push({
+          coffee_shop_id: coffeeShop.id,
+          type: 'instagram',
+          value: formData.instagram,
         })
       }
 
@@ -336,14 +347,25 @@ export default function NewCoffeeShopPage() {
             <CardDescription>Información de contacto de la cafetería</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => updateField('phone', e.target.value)}
-                placeholder="Ej: +56 9 1234 5678"
-              />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => updateField('phone', e.target.value)}
+                  placeholder="Ej: +56 9 1234 5678"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="instagram">Instagram</Label>
+                <Input
+                  id="instagram"
+                  value={formData.instagram}
+                  onChange={(e) => updateField('instagram', e.target.value)}
+                  placeholder="https://instagram.com/..."
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="website">Sitio Web</Label>
