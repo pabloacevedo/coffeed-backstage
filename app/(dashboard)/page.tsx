@@ -23,7 +23,7 @@ async function getStats() {
     { count: reportsCount },
     { count: viewsCount },
   ] = await Promise.all([
-    supabase.from("coffee_shops").select("*", { count: "exact", head: true }).eq("deleted", false),
+    supabase.from("coffee_shops").select("*", { count: "exact", head: true }).eq("deleted", false).eq("active", true),
     supabase.from("reviews").select("*", { count: "exact", head: true }).eq("deleted", false),
     supabase.from("reports").select("*", { count: "exact", head: true }).eq("deleted", false).eq("status", "pending"),
     supabase.from("views").select("*", { count: "exact", head: true }),

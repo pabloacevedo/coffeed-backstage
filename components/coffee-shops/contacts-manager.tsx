@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useState } from "react"
@@ -52,10 +53,10 @@ export function ContactsManager({ coffeeShopId, existingContacts }: ContactsMana
   const [contacts, setContacts] = useState<Contact[]>(
     existingContacts.length > 0
       ? existingContacts.map((c) => ({
-          id: c.id,
-          type: c.type,
-          value: c.value,
-        }))
+        id: c.id,
+        type: c.type,
+        value: c.value,
+      }))
       : []
   )
 
@@ -176,10 +177,10 @@ export function ContactsManager({ coffeeShopId, existingContacts }: ContactsMana
                     contact.type === "phone"
                       ? "+56 9 1234 5678"
                       : contact.type === "whatsapp"
-                      ? "+56 9 1234 5678"
-                      : contact.type === "instagram"
-                      ? "@cafeteria"
-                      : "https://cafeteria.com"
+                        ? "+56 9 1234 5678"
+                        : contact.type === "instagram"
+                          ? "@cafeteria"
+                          : "https://cafeteria.com"
                   }
                 />
               </div>
