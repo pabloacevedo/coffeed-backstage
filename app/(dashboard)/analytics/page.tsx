@@ -16,6 +16,9 @@ import { TopSearchesCard } from "@/components/analytics/top-searches-card"
 import { DailyActivityCard } from "@/components/analytics/daily-activity-card"
 import { TopRatedCard, MostViewedCard, MostSharedCard } from "@/components/analytics/coffee-shops-cards"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface TopRatedShop {
   id: string
   name: string
@@ -169,6 +172,7 @@ async function getAnalytics() {
       lastActivity: data.lastActivity
     }))
     .sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime())
+    .slice(0, 10)
 
   // Usuarios nuevos últimos 7 días
   const sevenDaysAgo = new Date()

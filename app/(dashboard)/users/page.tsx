@@ -4,6 +4,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Users as UsersIcon } from "lucide-react"
 import { UsersList } from "@/components/users/users-list"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 async function getUsers() {
   const supabase = createAdminSupabaseClient()
 

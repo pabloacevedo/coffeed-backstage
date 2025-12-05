@@ -9,6 +9,9 @@ import Link from "next/link"
 import { CoffeedLogo } from "@/components/coffeed-logo"
 import { ImportFromGoogleMapsButton } from "@/components/coffee-shops/import-from-google-maps-button"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 async function getStats() {
   const supabase = await createServerSupabaseClient()
   const adminSupabase = createAdminSupabaseClient()
